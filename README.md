@@ -9,6 +9,7 @@
 > **ThreatIQ** is an AI-powered security alert triage and incident prioritization platform that fuses machine learning anomaly detection, asset criticality weighting, MITRE ATT&CK correlation, and Retrieval-Augmented Generation (RAG) to turn overwhelming alert noise into prioritized, explainable, evidence-backed incident response actions.
 
 ---
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/31a93dd2-71e4-4230-b9b6-285d9240d102" />
 
 ## Key Highlights & Architecture
 
@@ -62,6 +63,9 @@ ThreatIQ eliminates alert fatigue for Security Operations Center (SOC) analysts 
 - **🧠 Explainable AI Incident Reasoning**: Plain-English, step-by-step incident explanations explaining *What Happened*, *Root Cause*, and *Immediate Impact*.
 - **🛡️ Actionable Mitigation Playbooks**: Automated generation of exact remediation steps, firewall rules, and containment commands.
 - **🖥️ SOC Analyst Dashboard**: Cyberpunk/Glassmorphic dark UI built with Next.js 14, Tailwind CSS, Lucide icons, live event streams, incident filters, and instant demo replay.
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/f55e39ce-07e3-468f-a1fb-e690c2ec4ccc" />
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/41e246b9-995a-466f-ab4c-e3d35c451119" />
+
 
 ---
 
