@@ -1,0 +1,224 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ==========================================================================
+   ThreatIQ — Global Theme
+   Enforces the DESIGN_SYSTEM.md "Neo-Electric Slate & Obsidian" tokens.
+   Dark mode (obsidian) is the default theme (`.dark` on <html>).
+   ========================================================================== */
+
+@layer base {
+  :root {
+    /* ----------------------------------------------------------------------
+       DESIGN_SYSTEM.md — 2.1 raw palette tokens (hex, for direct use)
+       ---------------------------------------------------------------------- */
+    /* 1. Brand accents (Electric Energizers) */
+    --color-electric-lime: #d7ff3f;
+    --color-electric-lime-hover: #c7f02b;
+    --color-electric-lime-light: #f5fde1;
+    --color-electric-lime-surface: #d7ff3f;
+
+    --color-cyber-teal: #36c6af;
+    --color-cyber-teal-hover: #2eb39e;
+    --color-cyber-teal-light: #d5f6f0;
+    --color-cyber-teal-pill: #a7ede0;
+
+    /* 2. Obsidian & dark neutrals */
+    --color-obsidian-900: #0d0d10;
+    --color-obsidian-800: #141418;
+    --color-obsidian-700: #1d2129;
+    --color-obsidian-pill: #000000;
+
+    /* 3. Light canvas & elevated surfaces */
+    --color-canvas-bg: #f6f7f9;
+    --color-surface-card: #ffffff;
+    --color-surface-input: #ffffff;
+    --color-surface-hover: #f8fafd;
+
+    /* 4. Typography & text colors */
+    --color-text-primary: #0d0d10;
+    --color-text-secondary: #7e8695;
+    --color-text-muted: #8a8f98;
+    --color-text-white: #ffffff;
+    --color-text-dark-on-lime: #0d0d10;
+    --color-text-sidebar-muted: #8e95a5;
+
+    /* 5. Borders & dividers */
+    --color-border-subtle: #edf2f7;
+    --color-border-card: rgba(0, 0, 0, 0.04);
+    --color-border-dark: rgba(255, 255, 255, 0.08);
+
+    /* 6. Data visualization color map */
+    --chart-series-lime: #d7ff3f;
+    --chart-series-teal: #36c6af;
+    --chart-series-black: #0d0d10;
+    --chart-gridline: #eff3f8;
+    --chart-tooltip-bg: #0d0d10;
+    --chart-tooltip-text: #ffffff;
+
+    /* Micro-interactions */
+    --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+    --duration-fast: 150ms;
+    --duration-normal: 250ms;
+
+    /* ----------------------------------------------------------------------
+       shadcn/ui semantic tokens — LIGHT theme (ice canvas + obsidian sidebar)
+       Values are the HSL equivalents of the DESIGN_SYSTEM.md hex palette.
+       ---------------------------------------------------------------------- */
+    --background: 218 57% 97%; /* #F4F7FC canvas */
+    --foreground: 225 18% 9%; /* #12141A text-primary */
+
+    --card: 0 0% 100%; /* #FFFFFF surface-card */
+    --card-foreground: 225 18% 9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 225 18% 9%;
+
+    --primary: 71 95% 62%; /* #D8FA42 electric lime */
+    --primary-foreground: 220 20% 6%; /* #0C0E12 text-on-lime */
+
+    --secondary: 169 65% 90%; /* #D5F6F0 cyber-teal-light */
+    --secondary-foreground: 220 20% 6%;
+
+    --muted: 214 50% 96%; /* #F0F4FA progress track */
+    --muted-foreground: 219 10% 54%; /* #7E8695 text-secondary */
+
+    --accent: 169 65% 90%;
+    --accent-foreground: 220 20% 6%;
+
+    --destructive: 0 84% 60%; /* coral red for critical alerts */
+
+    --border: 210 38% 95%; /* #EDF2F7 border-subtle */
+    --input: 210 38% 95%;
+    --ring: 170 57% 49%; /* #36C6AF cyber teal focus ring */
+
+    --radius: 0.75rem; /* 12px base radius (DS radius-md) */
+
+    /* Chart series mapped onto the DS data-viz color map */
+    --chart-1: 71 95% 62%; /* electric lime */
+    --chart-2: 170 57% 49%; /* cyber teal */
+    --chart-3: 225 18% 9%; /* obsidian black */
+    --chart-4: 169 66% 79%; /* teal pill */
+    --chart-5: 70 93% 88%; /* lime light */
+
+    /* Sidebar is always solid obsidian (#0C0E12) in both themes */
+    --sidebar: 220 20% 6%;
+    --sidebar-foreground: 222 11% 60%; /* #8E95A5 inactive nav text */
+    --sidebar-primary: 71 95% 62%; /* electric lime active pill */
+    --sidebar-primary-foreground: 220 20% 6%;
+    --sidebar-accent: 0 0% 100% / 0.05; /* nav hover wash */
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 0 0% 100% / 0.08; /* border-dark */
+    --sidebar-ring: 71 95% 62%;
+  }
+
+  /* --------------------------------------------------------------------
+     DARK THEME (default) — solid obsidian shell, lime/teal accents
+     -------------------------------------------------------------------- */
+  .dark {
+    --background: 220 20% 6%; /* #0C0E12 obsidian-900 */
+    --foreground: 0 0% 100%; /* #FFFFFF */
+
+    --card: 225 18% 9%; /* #12141A obsidian-800 hero card */
+    --card-foreground: 0 0% 100%;
+
+    --popover: 225 18% 9%;
+    --popover-foreground: 0 0% 100%;
+
+    --primary: 71 95% 62%; /* #D8FA42 electric lime */
+    --primary-foreground: 220 20% 6%; /* #0C0E12 */
+
+    --secondary: 220 17% 14%; /* #1D2129 obsidian-700 */
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 220 17% 14%;
+    --muted-foreground: 222 11% 60%; /* #8E95A5 */
+
+    --accent: 220 17% 14%;
+    --accent-foreground: 71 95% 62%; /* lime on obsidian hover */
+
+    --destructive: 0 72% 58%;
+
+    --border: 0 0% 100% / 0.08; /* border-dark */
+    --input: 0 0% 100% / 0.1;
+    --ring: 71 95% 62%;
+
+    --chart-1: 71 95% 62%;
+    --chart-2: 170 57% 49%;
+    --chart-3: 0 0% 100%;
+    --chart-4: 169 66% 79%;
+    --chart-5: 70 93% 88%;
+
+    --sidebar: 220 20% 6%;
+    --sidebar-foreground: 222 11% 60%;
+    --sidebar-primary: 71 95% 62%;
+    --sidebar-primary-foreground: 220 20% 6%;
+    --sidebar-accent: 0 0% 100% / 0.05;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 0 0% 100% / 0.08;
+    --sidebar-ring: 71 95% 62%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    @apply h-full;
+  }
+
+  body {
+    @apply h-full bg-background text-foreground font-sans antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  /* --------------------------------------------------------------------
+     Minimal scrollbar styling (DESIGN_SYSTEM.md aesthetic)
+     -------------------------------------------------------------------- */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: #a3abb9; /* text-muted */
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: #7e8695; /* text-secondary */
+  }
+
+  .dark ::-webkit-scrollbar-thumb {
+    background-color: #2a2e39; /* obsidian-600 */
+  }
+
+  .dark ::-webkit-scrollbar-thumb:hover {
+    background-color: #1d2129; /* obsidian-700 */
+  }
+
+  /* Firefox */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #a3abb9 transparent;
+  }
+
+  .dark * {
+    scrollbar-color: #2a2e39 transparent;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}

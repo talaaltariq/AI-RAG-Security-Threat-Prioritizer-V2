@@ -1,0 +1,24 @@
+{
+  "generated_at": "2026-08-30T12:00:07.878967+00:00",
+  "model": "gemini-3.6-flash",
+  "explanations": {
+    "prod-db-01|critical|6|account_creation,c2_reverse_shell,certificate_modification,data_exfiltration,dns_query,process_execution": {
+      "observed_evidence": "The system detected six correlated events on critical asset prod-db-01 originating from source IP 10.0.0.5. Detected event types include account_creation, process_execution, certificate_modification, c2_reverse_shell, dns_query, and data_exfiltration. The detected exfiltration activity was explicitly mapped to MITRE technique T1041.",
+      "retrieved_context": "MITRE T1041 describes Exfiltration Over C2 Channel, where adversaries steal data over existing command-and-control connections to evade detection. MITRE T1573 details Encrypted Channel usage often accompanied by certificate modifications, while MITRE T1059.001 covers PowerShell abuse for executing commands and post-exploitation activity.",
+      "ai_interpretation": "The correlation of account creation, certificate modification, reverse shell establishment, and data exfiltration indicates a full post-exploitation compromise of prod-db-01. The activity directly leverages an established C2 channel to exfiltrate sensitive data (MITRE T1041), driving the high composite risk score of 91/100 due to critical asset targeting and severe impact.",
+      "recommended_action": "Isolate asset prod-db-01 from the network immediately and terminate all reverse shell processes to stop active data exfiltration and contain the intrusion.",
+      "confidence": "high",
+      "confidence_reason": "The incident is backed by six correlated high-severity event types on a critical target matching established threat intelligence patterns.",
+      "error": null
+    },
+    "prod-db-01|critical|4|auth_brute_force,login_success,port_scan,ssh_failed_login": {
+      "observed_evidence": "The system detected sequential suspicious events on critical asset prod-db-01 originating from source IP 192.168.1.201. The activity began with a port scan, followed by SSH failed logins and 47 authentication brute-force events against username 'admin' consistent with credential stuffing from a leaked password list, culminating in a successful login by the unusual account 'dbuser_bak'.",
+      "retrieved_context": "According to MITRE ATT&CK T1046, adversaries perform network service discovery to identify open ports prior to targeted attacks. Additionally, MITRE T1110.001 and MITRE T1021.004 describe how password guessing against SSH services followed by a successful login allows adversaries to establish encrypted sessions for unauthorized access.",
+      "ai_interpretation": "The observed sequence demonstrates a successful credential brute-force attack against prod-db-01, moving from initial reconnaissance to full account compromise. The composite risk score of 91/100 is driven by the critical asset classification, high anomaly score, and confirmed successful access following aggressive brute-force activity.",
+      "recommended_action": "Immediately isolate prod-db-01 from the network and terminate all active sessions originating from 192.168.1.201 to prevent further lateral movement or data exfiltration.",
+      "confidence": "high",
+      "confidence_reason": "High confidence is supported by four correlated detection events showing an end-to-end attack pattern from scanning to successful authentication.",
+      "error": null
+    }
+  }
+}

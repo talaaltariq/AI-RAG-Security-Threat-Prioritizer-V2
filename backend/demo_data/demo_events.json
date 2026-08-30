@@ -612,7 +612,7 @@
     "failed_attempts": 0,
     "bytes_transferred": 124000,
     "raw_severity": "critical",
-    "details": "Port scan detected: 1,024 ports probed on prod-db-01 from internal host 192.168.1.201 (Operation Shadow DB reconnaissance)"
+    "details": "Port scan detected: 1,024 ports probed on prod-db-01 from host 192.168.1.201; threat-intelligence hit flags the source as known-malicious scanner infrastructure (Operation Shadow DB reconnaissance)"
   },
   {
     "event_id": "evt-0042",
@@ -642,7 +642,7 @@
     "failed_attempts": 47,
     "bytes_transferred": 41300,
     "raw_severity": "critical",
-    "details": "47 failed authentication attempts for username 'admin' against MySQL service on prod-db-01 from 192.168.1.201"
+    "details": "47 failed authentication attempts for username 'admin' against MySQL service on prod-db-01 from 192.168.1.201; pattern consistent with credential stuffing from a leaked password list"
   },
   {
     "event_id": "evt-0044",
@@ -662,7 +662,7 @@
   {
     "event_id": "evt-0045",
     "timestamp": "2026-08-28T22:12:00",
-    "source_ip": "192.168.1.201",
+    "source_ip": "10.0.0.5",
     "destination_ip": "10.0.0.5",
     "destination_asset": "prod-db-01",
     "asset_criticality": "critical",
@@ -707,7 +707,7 @@
   {
     "event_id": "evt-0048",
     "timestamp": "2026-08-28T22:20:00",
-    "source_ip": "192.168.1.201",
+    "source_ip": "10.0.0.5",
     "destination_ip": "10.0.0.5",
     "destination_asset": "prod-db-01",
     "asset_criticality": "critical",
@@ -737,7 +737,7 @@
   {
     "event_id": "evt-0050",
     "timestamp": "2026-08-28T22:25:00",
-    "source_ip": "192.168.1.201",
+    "source_ip": "10.0.0.5",
     "destination_ip": "10.0.0.5",
     "destination_asset": "prod-db-01",
     "asset_criticality": "critical",

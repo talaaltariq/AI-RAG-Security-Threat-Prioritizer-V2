@@ -107,7 +107,7 @@ def extract_features(event: dict) -> np.ndarray:
         _to_number(event.get("failed_attempts", event.get("attempts")), 0.0),
         _to_number(event.get("bytes_transferred"), 0.0),
         _to_number(event.get("port_number", event.get("port")), -1.0),
-        _to_number(event.get("events_from_ip_last_hour"), 0.0),
+        _to_number(event.get("events_from_ip_last_hour"), 1.0),
         _extract_is_known_ip(event),
         _extract_asset_criticality(event),
     ]

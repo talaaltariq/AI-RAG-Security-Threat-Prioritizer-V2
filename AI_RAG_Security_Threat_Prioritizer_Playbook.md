@@ -107,7 +107,7 @@ Understand what other teams will build and make sure you are clearly different.
 - A RAG system that retrieves CVEs.
 - A dashboard that displays alerts from a CSV file.
 - A fine-tuned model that classifies threats.
-- A log analyzer with GPT.
+- A log analyzer with an LLM.
 
 All of these miss the core problem: **prioritization under uncertainty with explainability**.
 
@@ -162,7 +162,7 @@ Decide exactly what you are building so you do not waste time on things that do 
 | 3 | Alert Correlation | Group events by IP, time window, and technique similarity |
 | 4 | Composite Risk Scoring | 7-factor weighted formula producing 0–100 score |
 | 5 | RAG Retrieval | Query MITRE ATT&CK + CVE knowledge base; return top-3 relevant chunks |
-| 6 | LLM Explanation | GPT/Qwen generates "why this matters" using score factors + RAG context |
+| 6 | LLM Explanation | Google Gemini generates "why this matters" using score factors + RAG context |
 | 7 | Threat Queue UI | Ranked list of incidents with scores, sorted by priority |
 | 8 | Incident Detail Panel | Click an incident → see full score breakdown + AI explanation + sources |
 | 9 | Recommended Action | System suggests one specific action per incident |
@@ -419,14 +419,14 @@ Choose the right components so the system can be built quickly and demoed reliab
 #### RAG — LangChain + ChromaDB
 - **LangChain** orchestrates the retrieval pipeline.
 - **ChromaDB** is a local vector database. Runs as a file on disk — no cloud service needed.
-- **Embeddings** — use OpenAI `text-embedding-3-small` or Alibaba's embedding model.
+- **Embeddings** — use Google Generative AI embeddings (`models/gemini-embedding-001` or `text-embedding-004`) via `langchain-google-genai`.
 - Knowledge base: ~200 chunked MITRE ATT&CK technique descriptions + ~50 CVE summaries.
 - Persisted as a ChromaDB collection. Load once at startup.
 
-#### LLM — OpenAI GPT-4o-mini OR Alibaba Qwen via API
-- **Why GPT-4o-mini?** Cheap, fast, reliable, great at structured JSON output.
-- **Why Qwen?** Available via Alibaba credits — may be the required choice.
-- Always call with `response_format={"type": "json_object"}` to get structured output.
+#### LLM — Google Gemini API (gemini-1.5-flash / gemini-2.0-flash / gemini-3.6-flash)
+- **Why Gemini?** Fast, cost-effective, high rate limits, strong reasoning on cybersecurity data, and reliable structured JSON output via `langchain-google-genai`.
+- Configured via `GEMINI_API_KEY` or `GOOGLE_API_KEY`.
+- Always call with structured output (`with_structured_output(ExplanationResult)`) or JSON schema.
 - Temperature: 0.2 for consistency.
 
 #### External Knowledge Sources (Offline)
@@ -466,7 +466,7 @@ Choose the right components so the system can be built quickly and demoed reliab
 │  │  │                                 │                            │  │
 │  │  │  Query Builder                  │   ┌──────────────────┐    │  │
 │  │  │      ↓                          │   │  ChromaDB        │    │  │
-│  │  │  Embedding (OpenAI/Qwen)        │◄──│  Vector Store    │    │  │
+│  │  │  Embedding (Google Gemini)      │◄──│  Vector Store    │    │  │
 │  │  │      ↓                          │   │  (MITRE + CVE)   │    │  │
 │  │  │  Similarity Search              │   └──────────────────┘    │  │
 │  │  │      ↓                          │                            │  │
@@ -475,7 +475,7 @@ Choose the right components so the system can be built quickly and demoed reliab
 │  │                 │                                               │  │
 │  │                 ▼                                               │  │
 │  │  ┌──────────────────────────────────────────────────────────┐  │  │
-│  │  │  LLM REASONING LAYER (GPT-4o-mini / Qwen)                │  │  │
+│  │  │  LLM REASONING LAYER (Google Gemini)                     │  │  │
 │  │  │  Input: incident + score factors + RAG context           │  │  │
 │  │  │  Output: JSON { explanation, action, confidence }        │  │  │
 │  │  └──────────────┬───────────────────────────────────────────┘  │  │
@@ -536,8 +536,8 @@ Choose the right components so the system can be built quickly and demoed reliab
 | Data Manipulation | pandas, numpy | Latest | |
 | RAG Orchestration | LangChain | 0.2.x | |
 | Vector Store | ChromaDB | 0.5.x | Local, file-based |
-| Embeddings | OpenAI / Qwen API | — | `text-embedding-3-small` |
-| LLM | GPT-4o-mini / Qwen | — | Via API |
+| Embeddings | Google GenAI Embeddings | — | `models/gemini-embedding-001` / `text-embedding-004` |
+| LLM | Google Gemini (`gemini-1.5-flash` / `gemini-3.6-flash`) | — | Via Google GenAI API / `langchain-google-genai` |
 | Database ORM | SQLAlchemy | 2.x | |
 | Database | SQLite | Built-in Python | `sqlite:///./threatiq.db` |
 | API Docs | FastAPI Swagger | Auto-generated | `/docs` endpoint |
@@ -912,7 +912,7 @@ Without RAG, the LLM can only use its training data — which may be outdated or
 
 ### D. RAG Pipeline Design
 
-1. **Embedding model** — `text-embedding-3-small` from OpenAI (1536 dimensions, cheap, fast).
+1. **Embedding model** — Google Generative AI Embeddings (`models/gemini-embedding-001` or `text-embedding-004`) via `langchain-google-genai` (fast, reliable, persistent vectors).
 2. **ChromaDB collection** — Local file-based vector store. Persistent across restarts.
 3. **Query construction** — Build a query string from: `event_type + mitre_technique + asset_type + keywords`.
 4. **Retrieval** — Top-3 most similar chunks by cosine similarity.
@@ -944,7 +944,7 @@ KNOWLEDGE BASE (knowledge_base.py):
 - Two collections: "mitre_attack" and "cve_summaries"
 - Method: load_mitre_attack(json_path) → parse MITRE ATT&CK JSON, extract technique_id, name, description, mitigations. Create one document per technique. Embed and store.
 - Method: load_cve_summaries(json_path) → parse CVE JSON, extract cve_id, description, affected_software, cvss_score. Create one document per CVE. Embed and store.
-- Use OpenAI text-embedding-3-small (or env var EMBEDDING_MODEL to override)
+- Use Google Generative AI embeddings (models/gemini-embedding-001 or env var EMBEDDING_MODEL, with GEMINI_API_KEY / GOOGLE_API_KEY)
 - If collection already has documents, skip re-loading (check collection count > 0)
 
 RAG RETRIEVER (rag_retriever.py):
@@ -1079,12 +1079,12 @@ PROMPT BUILDER (prompt_builder.py):
 
 EXPLAINER (explainer.py):
 - Class: ThreatExplainer
-- Constructor: initializes OpenAI client using OPENAI_API_KEY env var (or DashScope client using ALIBABA_API_KEY env var depending on which is set)
+- Constructor: initializes Google Gemini client using ChatGoogleGenerativeAI (GEMINI_API_KEY or GOOGLE_API_KEY env var)
 - Method: explain(incident_dict, score_factors_dict, rag_results_list) → returns ExplanationResult (Pydantic model)
-- Model: gpt-4o-mini (or env var LLM_MODEL)
+- Model: gemini-1.5-flash / gemini-3.6-flash (or env var LLM_MODEL)
 - Temperature: 0.2
-- response_format: {"type": "json_object"}
-- Parse JSON response into ExplanationResult Pydantic model
+- Structured Output: uses llm.with_structured_output(ExplanationResult)
+- Parse structured response into ExplanationResult Pydantic model
 - On API failure: return ExplanationResult with error message in all fields and confidence="low"
 - Retry once on timeout
 
@@ -2129,7 +2129,7 @@ Make the UI look like a professional security product, not a hackathon prototype
 
 #### 🔑 API Keys
 - **NEVER** put API keys directly in code.
-- **ALWAYS** use `.env` file: `OPENAI_API_KEY=sk-...`
+- **ALWAYS** use `.env` file: `GEMINI_API_KEY=your_gemini_api_key_here` or `GOOGLE_API_KEY=your_key_here`
 - **ALWAYS** add `.env` to `.gitignore` immediately.
 - If you commit a key by accident: invalidate it immediately in the provider dashboard.
 
@@ -2173,7 +2173,7 @@ If a security event contains text designed to manipulate the LLM (e.g., an event
 On first run, SQLAlchemy needs to create the tables. Add `Base.metadata.create_all(bind=engine)` to the startup lifespan function. If you see "no such table" errors, this line is missing or not being called.
 
 #### ⚡ Rate Limits
-OpenAI and Alibaba APIs have rate limits. During development, space out your test calls. In the demo, use pre-generated explanations stored in the DB — do not call the LLM API live.
+Google Gemini API has rate limits. During development, space out your test calls. In the demo, use pre-generated explanations stored in the DB — do not call the LLM API live.
 
 #### 🧪 Test Before Moving On
 After every phase: test the specific module you just built before moving to the next. A bug in Phase 9 that is discovered in Phase 17 is much harder to fix.

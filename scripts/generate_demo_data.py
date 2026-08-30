@@ -172,29 +172,38 @@ def build_category_2():
 
 
 def build_category_3():
-    """10 "Operation Shadow DB" attack-chain events (T+00:00 .. T+00:25)."""
+    """10 "Operation Shadow DB" attack-chain events (T+00:00 .. T+00:25).
+
+    Correlation design (see DEMO_SCENARIO.md): the pre-compromise events
+    (T+00..T+09) are sourced from the attack host 192.168.1.201 and
+    correlate into Incident #1 (Reconnaissance + Brute Force). Once the
+    attacker is logged in, the on-host actions (T+12..T+25) originate from
+    prod-db-01 itself (10.0.0.5) and correlate into Incident #2
+    (Exfiltration + Persistence). Both groups chain within the
+    correlator's 15-minute source-IP window.
+    """
     chain = [
         # (T+ minutes, source_ip, (dest_ip, asset, criticality), event_type,
         #  protocol, port, failed_attempts, bytes, severity, details)
         (0, "192.168.1.201", PROD_DB, "port_scan", "TCP", 3306, 0, 124000, "critical",
-         "Port scan detected: 1,024 ports probed on prod-db-01 from internal host 192.168.1.201 (Operation Shadow DB reconnaissance)"),
+         "Port scan detected: 1,024 ports probed on prod-db-01 from host 192.168.1.201; threat-intelligence hit flags the source as known-malicious scanner infrastructure (Operation Shadow DB reconnaissance)"),
         (3, "192.168.1.201", DEV_SERVER, "ssh_failed_login", "SSH", 22, 3, 2340, "medium",
          "3 failed SSH authentication attempts against dev-server-02 from 192.168.1.201 within 40 seconds"),
         (7, "192.168.1.201", PROD_DB, "auth_brute_force", "MySQL", 3306, 47, 41300, "critical",
-         "47 failed authentication attempts for username 'admin' against MySQL service on prod-db-01 from 192.168.1.201"),
+         "47 failed authentication attempts for username 'admin' against MySQL service on prod-db-01 from 192.168.1.201; pattern consistent with credential stuffing from a leaked password list"),
         (9, "192.168.1.201", PROD_DB, "login_success", "MySQL", 3306, 1, 5600, "high",
          "Successful database login for account 'dbuser_bak' from 192.168.1.201; account not previously used from this source (lateral movement)"),
-        (12, "192.168.1.201", PROD_DB, "process_execution", "LOCAL", 0, 0, 0, "critical",
+        (12, "10.0.0.5", PROD_DB, "process_execution", "LOCAL", 0, 0, 0, "critical",
          "Unexpected PowerShell process launched on prod-db-01 under 'dbuser_bak' session: powershell.exe -nop -w hidden -enc SQBFAFgAKABOAGUAdwAtAE8AYgBqAGUAYwB0AA=="),
         (15, "10.0.0.5", EXTERNAL_EXFIL, "data_exfiltration", "TCP", 443, 0, 2469606195, "critical",
          "2.3 GB outbound data transfer from prod-db-01 to external IP 45.33.12.199 over TLS; volume is 40x the daily baseline"),
         (17, "10.0.0.5", DNS_SERVER, "dns_query", "UDP", 53, 0, 96, "critical",
          "DNS query from prod-db-01 for known-malicious C2 domain 'malicious-c2-domain.xyz'; threat-intelligence hit for AsyncRAT infrastructure"),
-        (20, "192.168.1.201", PROD_DB, "account_creation", "LOCAL", 0, 0, 0, "critical",
+        (20, "10.0.0.5", PROD_DB, "account_creation", "LOCAL", 0, 0, 0, "critical",
          "Hidden local account 'svc_hidden' created on prod-db-01 and added to the local Administrators group; hidden via registry SpecialAccounts\\UserList"),
         (22, "10.0.0.5", EXTERNAL_C2, "c2_reverse_shell", "TCP", 4444, 0, 84500, "critical",
          "Reverse TCP connection established from prod-db-01 to 45.33.12.200:4444; matches Metasploit meterpreter default handler signature"),
-        (25, "192.168.1.201", PROD_DB, "certificate_modification", "LOCAL", 0, 0, 0, "high",
+        (25, "10.0.0.5", PROD_DB, "certificate_modification", "LOCAL", 0, 0, 0, "high",
          "Unauthorized TLS certificate replacement on prod-db-01; self-signed certificate installed and bound to a service endpoint to enable an encrypted C2 channel"),
     ]
     events = []

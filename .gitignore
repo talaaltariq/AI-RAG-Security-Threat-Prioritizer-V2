@@ -1,12 +1,111 @@
+# ==============================================================================
+# ThreatIQ - AI RAG Security Threat Prioritizer .gitignore
+# ==============================================================================
+
+# Environment files & Secrets (CRITICAL)
 .env
+.env.*
+*.env
+*.env.*
 .env.local
+.env.development.local
+.env.test.local
+.env.production.local
+!.env.example
+!.env*.example
+
+# Python Caches, Virtual Environments & Artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environments
+venv/
+.venv/
+env/
+.env/
+ENV/
+env.bak/
+venv.bak/
+
+# Testing & Coverage
+.pytest_cache/
+**/.pytest_cache/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+htmlcov/
+
+# Machine Learning & Pickles
 *.pkl
+*.joblib
+*.h5
+*.onnx
+
+# Databases & Vector Stores (Local storage)
+*.db
+*.sqlite
+*.sqlite3
 data/chroma_db/
 backend/data/chroma_db/
-__pycache__/
-*.pyc
+chroma_db/
+**/chroma_db/
+threatiq.db
+**/threatiq.db
+
+# Node / Next.js / Frontend
 node_modules/
+**/node_modules/
 .next/
-venv/
-*.db
+**/.next/
+out/
+.npm
+*.tsbuildinfo
+next-env.d.ts
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Operating System & IDE Artifacts
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+*.sublime-workspace
+*.sublime-project
+
+# Logs
+*.log
+logs/
