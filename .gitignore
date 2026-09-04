@@ -109,3 +109,6 @@ Thumbs.db
 # Logs
 *.log
 logs/
+
+# Generated Report Exports
+*.pdf

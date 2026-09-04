@@ -139,17 +139,20 @@ class FastAnomalyDetector(AnomalyDetector):
         mean_depth = total_depth / self._n_trees
         return float(-(2.0 ** (-mean_depth / self._depth_normalizer)) - self._offset)
 
-    def detect(self, event_dict: Dict[str, Any]) -> Dict[str, Any]:
+    def detect(
+        self, event_dict: Dict[str, Any], threshold: Optional[float] = None
+    ) -> Dict[str, Any]:
         """Score a normalized event dict; same contract as the base class."""
         if self.model is None:
             raise RuntimeError("Anomaly detection model is not initialized.")
 
+        threshold = self._resolve_threshold(threshold)
         features = self.feature_extractor.extract(event_dict)
         raw_score = self._raw_decision_function(features)
         anomaly_score = round(self._normalize_score(raw_score), 4)
 
         return {
             "anomaly_score": anomaly_score,
-            "is_anomaly": bool(anomaly_score > self.ANOMALY_THRESHOLD),
+            "is_anomaly": bool(anomaly_score > threshold),
             "features_used": list(FEATURE_NAMES),
         }

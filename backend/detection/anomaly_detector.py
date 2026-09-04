@@ -18,6 +18,7 @@ from backend.detection.feature_extractor import (
     FEATURE_NAMES,
     FeatureExtractor,
 )
+from backend.models_config.pipeline_settings import load_settings
 
 logger = logging.getLogger(__name__)
 
@@ -123,28 +124,48 @@ class AnomalyDetector:
         normalized = (self._df_max - raw_score) / span
         return float(np.clip(normalized, 0.0, 1.0))
 
-    def detect(self, event_dict: Dict[str, Any]) -> Dict[str, Any]:
+    def _resolve_threshold(self, threshold: Optional[float]) -> float:
+        """Return the explicit threshold, else the configured DB value.
+
+        When no threshold is passed, the current value is read from the
+        persisted PipelineSettings row; any lookup failure falls back to
+        the class default so detection never breaks on a settings read.
+        """
+        if threshold is not None:
+            return float(threshold)
+        try:
+            return float(load_settings().anomaly_threshold)
+        except Exception:  # noqa: BLE001 - detection must never fail here
+            logger.exception("Settings lookup failed; using default threshold.")
+            return self.ANOMALY_THRESHOLD
+
+    def detect(
+        self, event_dict: Dict[str, Any], threshold: Optional[float] = None
+    ) -> Dict[str, Any]:
         """Score a normalized event dict for anomalous behavior.
 
         Args:
             event_dict: normalized event fields (see backend/models/event.py).
+            threshold: anomaly cutoff in 0.0-1.0; when omitted, the current
+                value from PipelineSettings is used (default 0.5).
 
         Returns:
             {
                 "anomaly_score": float in 0.0-1.0 (higher = more anomalous),
-                "is_anomaly": True when anomaly_score > 0.5,
+                "is_anomaly": True when anomaly_score > threshold,
                 "features_used": list of feature names, in model order,
             }
         """
         if self.model is None:
             raise RuntimeError("Anomaly detection model is not initialized.")
 
+        threshold = self._resolve_threshold(threshold)
         features = self.feature_extractor.extract(event_dict)
         raw_score = float(self.model.decision_function(features)[0])
         anomaly_score = round(self._normalize_score(raw_score), 4)
 
         return {
             "anomaly_score": anomaly_score,
-            "is_anomaly": bool(anomaly_score > self.ANOMALY_THRESHOLD),
+            "is_anomaly": bool(anomaly_score > threshold),
             "features_used": list(FEATURE_NAMES),
         }

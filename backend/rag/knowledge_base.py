@@ -178,6 +178,13 @@ class KnowledgeBase:
         )
         return count
 
+    def get_stats(self) -> Dict[str, int]:
+        """Return the actual document count of each ChromaDB collection."""
+        return {
+            "mitre_count": self.mitre_collection.count(),
+            "cve_count": self.cve_collection.count(),
+        }
+
     # ------------------------------------------------------------------ #
     # Embedding helpers
     # ------------------------------------------------------------------ #

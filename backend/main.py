@@ -37,7 +37,7 @@ load_dotenv(Path(__file__).resolve().parent / ".env")
 from fastapi import FastAPI, Request  # noqa: E402
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 
-from backend.api import incidents, ingest, settings, stats  # noqa: E402
+from backend.api import incidents, ingest, llm_config, reports, settings, stats, upload  # noqa: E402
 from backend.correlation.correlator import EventCorrelator  # noqa: E402
 from backend.database.db import init_db  # noqa: E402
 from backend.detection.anomaly_detector import AnomalyDetector  # noqa: E402
@@ -131,7 +131,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000"],  # Only the local frontend
     allow_credentials=True,
-    allow_methods=["GET", "POST"],  # The API exposes no other verbs
+    allow_methods=["GET", "POST", "PUT"],  # verbs exposed by the API
     allow_headers=["*"],
 )
 
@@ -154,8 +154,11 @@ async def log_requests(request: Request, call_next):
 
 app.include_router(incidents.router, prefix="/api")
 app.include_router(ingest.router, prefix="/api")
+app.include_router(upload.router, prefix="/api")
 app.include_router(settings.router, prefix="/api")
 app.include_router(stats.router, prefix="/api")
+app.include_router(llm_config.router, prefix="/api")
+app.include_router(reports.router, prefix="/api")
 
 
 @app.get("/health")

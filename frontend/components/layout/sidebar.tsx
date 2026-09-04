@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
+  ListChecks,
   ShieldAlert,
   Settings,
   ArrowUpRight,
@@ -14,6 +15,7 @@ import {
 import { clsx } from "clsx";
 
 const NAV_ITEMS = [
+  { label: "Setup", href: "/setup", icon: ListChecks },
   { label: "Dashboard", href: "/", icon: LayoutDashboard },
   { label: "Threat Queue", href: "/threats", icon: ShieldAlert },
   { label: "Settings", href: "/settings", icon: Settings },
@@ -114,22 +116,34 @@ export function Sidebar({
         </nav>
       </div>
 
-      {/* Promo / Go Pro card (matches GoodBoard reference lime card) */}
+      {/* Open Source GitHub Community Widget */}
       {isCollapsed ? (
         <div className="relative mt-auto flex justify-center">
-          <button
-            type="button"
-            title="ThreatIQ Pro+"
-            className="flex h-11 w-11 items-center justify-center rounded-full bg-[#D7FF3F] text-[#0D0D10] font-extrabold text-[11px] shadow-sm transition-transform hover:scale-105"
+          <a
+            href="https://github.com/talaaltariq/AI-RAG-Security-Threat-Prioritizer-V2"
+            target="_blank"
+            rel="noreferrer"
+            title="AI-RAG-Security-Threat-Prioritizer-V2 on GitHub"
+            className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#D8FF3F] text-black shadow-sm transition-transform hover:scale-105"
           >
-            PRO+
-          </button>
+            <svg
+              className="h-5 w-5 fill-current"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path
+                fillRule="evenodd"
+                clipRule="evenodd"
+                d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"
+              />
+            </svg>
+          </a>
         </div>
       ) : (
-        <div className="relative mt-auto overflow-hidden rounded-[22px] bg-[#D7FF3F] p-5 text-[#0D0D10] shadow-sm">
+        <div className="relative mt-auto overflow-hidden rounded-2xl bg-[#D8FF3F] p-4 text-black shadow-sm">
           {/* Subtle background decorative wave */}
           <svg
-            className="pointer-events-none absolute -right-4 -top-4 h-28 w-28 text-black/[0.06]"
+            className="pointer-events-none absolute -right-4 -top-4 h-28 w-28 text-black/[0.05]"
             viewBox="0 0 100 100"
             fill="none"
             stroke="currentColor"
@@ -139,38 +153,59 @@ export function Sidebar({
           </svg>
 
           <div className="relative z-10">
+            {/* Header / Badge */}
             <div className="flex items-center justify-between">
-              <span className="inline-flex items-center gap-0.5 rounded-full bg-black/10 px-2.5 py-0.5 text-[11px] font-extrabold tracking-wider text-[#0D0D10]">
-                PRO+
+              <span className="bg-black/10 text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-full uppercase">
+                OPEN SOURCE
               </span>
+              <ArrowUpRight className="h-3.5 w-3.5 text-black/50" />
             </div>
 
-            <div className="my-3 flex items-center justify-center py-1">
-              {/* Wavy brand glyph like reference */}
-              <svg
-                className="h-12 w-12 text-[#0D0D10]"
-                viewBox="0 0 48 48"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="4"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M14 18 C14 10, 26 10, 26 22 C26 34, 38 34, 38 26" />
-              </svg>
+            {/* Content & Iconography */}
+            <div className="my-2.5 flex items-center gap-2.5">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-black text-white p-1.5">
+                <svg
+                  className="h-full w-full fill-current"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path
+                    fillRule="evenodd"
+                    clipRule="evenodd"
+                    d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"
+                  />
+                </svg>
+              </div>
+              <div className="min-w-0 flex-1">
+                <a
+                  href="https://github.com/talaaltariq/AI-RAG-Security-Threat-Prioritizer-V2"
+                  target="_blank"
+                  rel="noreferrer"
+                  title="AI-RAG-Security-Threat-Prioritizer-V2"
+                  className="block text-xs font-bold leading-tight text-black truncate hover:underline"
+                >
+                  AI-RAG-Security-Threat-Prioritizer-V2
+                </a>
+                <p className="text-[10px] font-medium text-black/60">
+                  MIT / Apache 2.0
+                </p>
+              </div>
             </div>
 
-            <p className="mb-3 text-center text-xs font-bold leading-tight text-[#0D0D10]">
-              Get all features on ThreatIQ Pro
+            {/* Tagline */}
+            <p className="mb-3 text-[11px] font-medium leading-snug text-black/80">
+              Community rules, detection schemas &amp; MITRE vectors.
             </p>
 
-            <button
-              type="button"
-              className="flex w-full items-center justify-center gap-1.5 rounded-full bg-[#0D0D10] px-4 py-2.5 text-xs font-bold text-white transition-transform duration-150 ease-out hover:scale-[1.02] active:scale-[0.98]"
+            {/* Action Button / CTA */}
+            <a
+              href="https://github.com/talaaltariq/AI-RAG-Security-Threat-Prioritizer-V2"
+              target="_blank"
+              rel="noreferrer"
+              className="bg-black text-white text-xs font-semibold py-2 rounded-xl w-full flex items-center justify-center gap-1.5 hover:bg-black/90 transition-colors"
             >
-              Go Pro now
-              <ArrowUpRight className="h-3.5 w-3.5" />
-            </button>
+              View on GitHub ↗
+            </a>
           </div>
         </div>
       )}

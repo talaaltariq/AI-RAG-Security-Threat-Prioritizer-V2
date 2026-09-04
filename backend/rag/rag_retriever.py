@@ -7,6 +7,7 @@ RAGResult entries only (no fabricated content).
 
 from typing import Any, Dict, List, Optional, TypedDict
 
+from backend.models_config.pipeline_settings import load_settings
 from backend.rag.knowledge_base import KnowledgeBase
 
 
@@ -39,19 +40,31 @@ class RAGRetriever:
     def retrieve(
         self,
         incident_dict: Dict[str, Any],
-        top_k: int = 3,
+        top_k: Optional[int] = None,
     ) -> List[RAGResult]:
         """Search both collections for documents relevant to the incident.
+
+        Retrieval parameters (``rag_top_k``, ``rag_similarity_cutoff``) are
+        read from the persisted PipelineSettings; ``top_k`` may be passed
+        explicitly to override the configured value. Results whose
+        relevance_score falls below the configured cutoff are dropped
+        (no filtering when the cutoff is 0.0).
 
         Args:
             incident_dict: incident payload (asset, severity, mitre_technique,
                 events with event_type/details, etc.).
-            top_k: number of hits requested per collection.
+            top_k: optional override for the configured rag_top_k.
 
         Returns:
             RAGResult entries sorted by relevance (best first), or a single
-            fallback entry when nothing is retrieved.
+            fallback entry when nothing is retrieved or filtering removes
+            all results.
         """
+        settings = load_settings()
+        if top_k is None:
+            top_k = settings.rag_top_k
+        similarity_cutoff = settings.rag_similarity_cutoff
+
         query = self._build_query(incident_dict)
         query_vector = self.knowledge_base.embeddings.embed_query(query)
 
@@ -72,6 +85,13 @@ class RAGRetriever:
                 KnowledgeBase.CVE_COLLECTION,
             )
         )
+
+        if similarity_cutoff > 0.0:
+            results = [
+                r
+                for r in results
+                if r["relevance_score"] >= similarity_cutoff
+            ]
 
         results.sort(key=lambda r: r["relevance_score"], reverse=True)
         if len(results) < 1:

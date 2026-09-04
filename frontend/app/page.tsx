@@ -1,13 +1,19 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
-import { Search, Download } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Search, Download, Loader2, XCircle, ChevronDown } from "lucide-react";
+import { clsx } from "clsx";
+import axios from "axios";
 
 import { StatCard } from "@/components/dashboard/StatCard";
 import { AlertReductionBanner } from "@/components/dashboard/AlertReductionBanner";
 import { SeverityDistributionCard } from "@/components/dashboard/SeverityDistributionCard";
 import { TopTargetedAssetsCard } from "@/components/dashboard/TopTargetedAssetsCard";
 import { useIncidents, useStats } from "@/lib/hooks";
+import { exportReport } from "@/lib/api";
+import { SETUP_COMPLETE_KEY } from "@/lib/setup";
 
 const AlertVolumeChart = dynamic(
   () =>
@@ -28,6 +34,19 @@ const AlertVolumeChart = dynamic(
  * electric lime accents, soft rounded white cards, and real data visualizations.
  */
 export default function DashboardPage() {
+  const router = useRouter();
+  // First-run gate: the /setup flow is the landing experience — until it
+  // has been completed (localStorage flag set by "Run Analysis"), the
+  // dashboard redirects there.
+  const [setupChecked, setSetupChecked] = useState(false);
+  useEffect(() => {
+    if (localStorage.getItem(SETUP_COMPLETE_KEY) === "1") {
+      setSetupChecked(true);
+    } else {
+      router.replace("/setup");
+    }
+  }, [router]);
+
   // Phase 22: SWR-backed data — automatic caching, deduplication, and
   // background revalidation. Revisiting the dashboard renders instantly
   // from cache instead of refetching.
@@ -44,6 +63,54 @@ export default function DashboardPage() {
     : null;
   // Initial load only: cached data keeps rendering while SWR revalidates.
   const loading = !stats && !error;
+
+  // Export Report button state: spinner while the backend renders the PDF,
+  // and an inline error card (message + collapsible technical detail) on
+  // failure, matching the ConnectionStatus error pattern from /setup.
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
+  const [exportErrorDetail, setExportErrorDetail] = useState<string | null>(null);
+  const [showExportDetail, setShowExportDetail] = useState(false);
+
+  async function handleExportReport() {
+    setExporting(true);
+    setExportError(null);
+    setExportErrorDetail(null);
+    setShowExportDetail(false);
+    try {
+      const blob = await exportReport();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `threatiq_report_${new Date()
+        .toISOString()
+        .slice(0, 10)}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      setExportError(
+        "Failed to generate the report. Check that the backend is running and try again."
+      );
+      if (axios.isAxiosError(err)) {
+        // responseType: "blob" turns error bodies into blobs too — surface
+        // status + generic message as the technical detail.
+        const status = err.response?.status
+          ? `HTTP ${err.response.status}`
+          : "No response";
+        setExportErrorDetail(`${err.message} (${status})`);
+      } else if (err instanceof Error) {
+        setExportErrorDetail(err.message);
+      } else {
+        setExportErrorDetail(String(err));
+      }
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  if (!setupChecked) return <DashboardSkeleton />;
 
   if (loading) return <DashboardSkeleton />;
 
@@ -98,13 +165,68 @@ export default function DashboardPage() {
         <div className="flex items-center gap-2.5">
           <button
             type="button"
-            className="inline-flex items-center gap-2 rounded-full border border-black/[0.06] bg-white px-4 py-2 text-xs font-bold text-[#0D0D10] shadow-[0_2px_8px_rgba(0,0,0,0.03)] transition-all hover:bg-[#F6F7F9] active:scale-[0.98]"
+            onClick={handleExportReport}
+            disabled={exporting}
+            className="inline-flex items-center gap-2 rounded-full border border-black/[0.06] bg-white px-4 py-2 text-xs font-bold text-[#0D0D10] shadow-[0_2px_8px_rgba(0,0,0,0.03)] transition-all hover:bg-[#F6F7F9] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
           >
-            <Download className="h-3.5 w-3.5" />
-            Export Report
+            {exporting ? (
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Generating...
+              </>
+            ) : (
+              <>
+                <Download className="h-3.5 w-3.5" />
+                Export Report
+              </>
+            )}
           </button>
         </div>
       </header>
+
+      {/* Export failure: plain message + collapsible technical detail,
+          same pattern as ConnectionStatus on /setup. */}
+      {exportError && (
+        <div className="flex flex-col gap-2 rounded-[18px] border border-rose-200 bg-rose-50 px-4 py-3">
+          <div className="flex items-start gap-3">
+            <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-rose-600" />
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-bold text-rose-800">
+                Report export failed
+              </p>
+              <p className="mt-1 text-xs font-semibold text-rose-800">
+                {exportError}
+              </p>
+            </div>
+          </div>
+
+          {exportErrorDetail && (
+            <div className="pl-7">
+              <button
+                type="button"
+                onClick={() => setShowExportDetail((prev) => !prev)}
+                className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-700 underline-offset-2 transition-colors hover:text-rose-900 hover:underline"
+                aria-expanded={showExportDetail}
+              >
+                <ChevronDown
+                  className={clsx(
+                    "h-3 w-3 transition-transform duration-150",
+                    showExportDetail && "rotate-180"
+                  )}
+                />
+                {showExportDetail
+                  ? "Hide technical details"
+                  : "Show technical details"}
+              </button>
+              {showExportDetail && (
+                <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap break-words rounded-[12px] border border-rose-200 bg-white/70 p-3 font-mono text-[11px] leading-relaxed text-rose-900">
+                  {exportErrorDetail}
+                </pre>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Top 4 KPI Stat Cards */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">

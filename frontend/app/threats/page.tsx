@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Search, ShieldAlert } from "lucide-react";
 import { clsx } from "clsx";
 
@@ -26,6 +26,18 @@ const FILTERS: SeverityFilter[] = ["all", ...SEVERITY_ORDER];
  */
 export default function ThreatQueuePage() {
   const [filter, setFilter] = useState<SeverityFilter>("all");
+  const [searchInput, setSearchInput] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Debounce the search term (200ms) so the client-side filter only runs
+  // once typing pauses, not on every keystroke.
+  useEffect(() => {
+    const timer = setTimeout(
+      () => setSearchQuery(searchInput.trim().toLowerCase()),
+      200
+    );
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
   // Phase 22: SWR-backed queue — cached across page navigations with
   // background revalidation, so the queue renders instantly on revisit.
@@ -38,13 +50,26 @@ export default function ThreatQueuePage() {
       : "Failed to load incidents"
     : null;
 
-  const filtered = useMemo(
-    () =>
+  // Severity filter and search query combine with AND logic: an incident
+  // must match the selected severity band AND the debounced search term.
+  const filtered = useMemo(() => {
+    let result =
       filter === "all"
         ? incidents
-        : incidents.filter((i) => i.severity_label === filter),
-    [incidents, filter]
-  );
+        : incidents.filter((i) => i.severity_label === filter);
+    if (searchQuery) {
+      result = result.filter(
+        (i) =>
+          i.id.toLowerCase().includes(searchQuery) ||
+          i.asset.toLowerCase().includes(searchQuery) ||
+          (i.mitre_technique ?? "").toLowerCase().includes(searchQuery) ||
+          (i.source_ips ?? []).some((ip) =>
+            ip.toLowerCase().includes(searchQuery)
+          )
+      );
+    }
+    return result;
+  }, [incidents, filter, searchQuery]);
 
   // Quick summary counts per severity band
   const counts = useMemo(() => {
@@ -81,8 +106,22 @@ export default function ThreatQueuePage() {
           </p>
         </div>
 
-        {/* Severity Filter Tabs — Pill segmented control on a light gray track */}
-        <div className="inline-flex items-center gap-1 rounded-full bg-black/[0.04] p-1 border border-black/[0.04]">
+        {/* Search + Severity Filter Tabs — client-side filters, AND logic */}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative w-64 sm:w-72">
+            <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8A8F98]" />
+            <input
+              type="text"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder="Search by asset, IP, technique, or incident ID..."
+              aria-label="Search incidents"
+              className="w-full rounded-full border border-black/[0.06] bg-white py-2.5 pl-11 pr-4 text-xs font-medium text-[#0D0D10] placeholder-[#8A8F98] shadow-[0_2px_12px_rgba(0,0,0,0.02)] transition-all focus:border-[#0D0D10] focus:outline-none focus:ring-2 focus:ring-[#0D0D10]/10"
+            />
+          </div>
+
+          {/* Pill segmented control on a light gray track */}
+          <div className="inline-flex items-center gap-1 rounded-full bg-black/[0.04] p-1 border border-black/[0.04]">
           {FILTERS.map((f) => {
             const active = filter === f;
             return (
@@ -101,6 +140,7 @@ export default function ThreatQueuePage() {
               </button>
             );
           })}
+          </div>
         </div>
       </header>
 
@@ -155,6 +195,18 @@ export default function ThreatQueuePage() {
           <p className="mt-1 text-xs font-medium text-[#8A8F98]">
             {error} — verify the backend is running at{" "}
             {process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}.
+          </p>
+        </div>
+      ) : filtered.length === 0 && searchQuery ? (
+        <div className="rounded-[24px] border border-black/[0.04] bg-white px-10 py-16 text-center shadow-[0_4px_20px_rgba(0,0,0,0.04)]">
+          <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-black/[0.04] text-[#8A8F98]">
+            <Search className="h-5 w-5" strokeWidth={2} />
+          </span>
+          <p className="text-sm font-bold text-[#0D0D10]">
+            No incidents match your search
+          </p>
+          <p className="mt-1 text-xs font-medium text-[#8A8F98]">
+            Try a different asset, IP, technique, or incident ID.
           </p>
         </div>
       ) : (

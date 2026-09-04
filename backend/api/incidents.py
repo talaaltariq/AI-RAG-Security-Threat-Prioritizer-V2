@@ -7,9 +7,9 @@ status transitions through the mitigation-layer state machine.
 
 import json
 import logging
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import func
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
@@ -18,10 +18,14 @@ from backend.database.db import (
     AnalystActionModel,
     EventModel,
     IncidentModel,
+    LLMExplanationModel,
     get_db,
 )
 from backend.mitigation.analyst_actions import apply_action
 from backend.models.analyst_action import AnalystActionCreate
+from backend.models_config.pipeline_settings import get_settings
+from backend.pipeline import RULE_BASED_MARKER
+from backend.scoring.score_factors import ScoreFactors
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +46,15 @@ def list_incidents(db: Session = Depends(get_db)) -> List[Dict[str, Any]]:
             .group_by(EventModel.incident_id)
             .all()
         )
+        ip_rows = (
+            db.query(EventModel.incident_id, EventModel.source_ip)
+            .filter(EventModel.source_ip.isnot(None))
+            .distinct()
+            .all()
+        )
+        source_ips: Dict[str, List[str]] = {}
+        for incident_id, ip in ip_rows:
+            source_ips.setdefault(incident_id, []).append(ip)
     except SQLAlchemyError as exc:
         logger.exception("Failed to list incidents.")
         raise HTTPException(
@@ -49,22 +62,37 @@ def list_incidents(db: Session = Depends(get_db)) -> List[Dict[str, Any]]:
         ) from exc
 
     return [
-        _incident_summary_dict(incident, counts.get(incident.id, 0))
+        _incident_summary_dict(
+            incident,
+            counts.get(incident.id, 0),
+            source_ips.get(incident.id, []),
+        )
         for incident in incidents
     ]
 
 
 @router.get("/{incident_id}")
 def get_incident(
-    incident_id: str, db: Session = Depends(get_db)
+    incident_id: str, request: Request, db: Session = Depends(get_db)
 ) -> Dict[str, Any]:
-    """Return the full incident: events, score factors, RAG, LLM, actions."""
+    """Return the full incident: events, score factors, RAG, LLM, actions.
+
+    When LLM pre-caching is disabled, the ingest pipeline stores only a
+    deterministic rule-based explanation; the first detail view upgrades
+    it to an LLM-generated one (persisted, so later views are cached).
+    """
     incident = db.get(IncidentModel, incident_id)
     if incident is None:
         raise HTTPException(status_code=404, detail="Incident not found")
 
+    _maybe_generate_lazy_explanation(request, db, incident)
+
     try:
-        detail = _incident_summary_dict(incident, len(incident.events))
+        detail = _incident_summary_dict(
+            incident,
+            len(incident.events),
+            sorted({e.source_ip for e in incident.events if e.source_ip}),
+        )
         detail["events"] = [_event_dict(event) for event in incident.events]
         detail["score_factors"] = (
             _score_factors_dict(incident.score_factors)
@@ -140,12 +168,123 @@ def submit_analyst_action(
 
 
 # ------------------------------------------------------------------ #
+# Lazy LLM explanation (pre-caching disabled)
+# ------------------------------------------------------------------ #
+
+
+def _maybe_generate_lazy_explanation(
+    request: Request, db: Session, incident: IncidentModel
+) -> None:
+    """Generate and persist the LLM explanation on first detail view.
+
+    Only runs when ``enable_precaching`` is off and the stored explanation
+    is still the deterministic rule-based one; any failure leaves the
+    rule-based explanation in place so the endpoint never breaks.
+    """
+    stored = incident.llm_explanation
+    if stored is not None and RULE_BASED_MARKER not in (
+        stored.confidence_reason or ""
+    ):
+        return  # already an LLM-generated (cached) explanation
+
+    if get_settings(db).enable_precaching:
+        return  # pre-caching on: rule-based bands stay rule-based
+
+    explainer = getattr(request.app.state, "explainer", None)
+    if explainer is None:
+        return
+
+    try:
+        result = explainer.explain(
+            _lazy_incident_payload(incident),
+            _lazy_score_breakdown(incident),
+            [_rag_result_dict(r) for r in incident.rag_results],
+        )
+    except Exception:  # noqa: BLE001 - lazy generation must not break reads
+        logger.exception(
+            "Lazy LLM explanation failed for incident %s.", incident.id
+        )
+        return
+    if result.error is not None:
+        logger.warning(
+            "Lazy LLM explanation for incident %s returned error: %s",
+            incident.id,
+            result.error,
+        )
+        return
+
+    try:
+        row = stored or LLMExplanationModel(incident_id=incident.id)
+        row.observed_evidence = result.observed_evidence
+        row.retrieved_context = result.retrieved_context
+        row.ai_interpretation = result.ai_interpretation
+        row.recommended_action = result.recommended_action
+        row.confidence = result.confidence
+        row.confidence_reason = result.confidence_reason
+        row.error = result.error
+        if stored is None:
+            db.add(row)
+        incident.llm_explanation = row
+        db.commit()
+        logger.info("Lazy LLM explanation persisted for incident %s.", incident.id)
+    except SQLAlchemyError:
+        db.rollback()
+        logger.exception(
+            "Failed to persist lazy explanation for incident %s.", incident.id
+        )
+
+
+def _lazy_incident_payload(incident: IncidentModel) -> Dict[str, Any]:
+    """Rebuild the incident payload the explainer expects from DB rows."""
+    events = [_event_dict(event) for event in incident.events]
+    max_anomaly = max(
+        (float(e.get("anomaly_score") or 0.0) for e in events), default=0.0
+    )
+    return {
+        "id": incident.id,
+        "asset": incident.asset,
+        "asset_criticality": incident.asset_criticality,
+        "severity": incident.severity_label,
+        "severity_label": incident.severity_label,
+        "total_score": incident.total_score,
+        "mitre_technique": incident.mitre_technique,
+        "latest_event_time": (
+            incident.latest_event_time.isoformat()
+            if incident.latest_event_time
+            else None
+        ),
+        "max_anomaly_score": max_anomaly,
+        "events": events,
+    }
+
+
+def _lazy_score_breakdown(incident: IncidentModel) -> Dict[str, Any]:
+    """Rebuild the score breakdown dict from the stored factor row."""
+    row = incident.score_factors
+    if row is None:
+        return {"factors": [], "total_score": incident.total_score, "max_total": 100}
+    factors = ScoreFactors(
+        base_severity=row.base_severity,
+        anomaly_score_pts=row.anomaly_score_pts,
+        asset_criticality_pts=row.asset_criticality_pts,
+        exploitability_pts=row.exploitability_pts,
+        evidence_count_pts=row.evidence_count_pts,
+        recency_pts=row.recency_pts,
+        ti_relevance_pts=row.ti_relevance_pts,
+        total_score=incident.total_score,
+    )
+    return factors.to_breakdown_dict()
+
+
+# ------------------------------------------------------------------ #
 # Serializers
 # ------------------------------------------------------------------ #
 
 
 def _incident_summary_dict(
-    incident: IncidentModel, events_count: int
+    incident: IncidentModel,
+    events_count: int,
+    source_ips: Optional[List[str]] = None,
 ) -> Dict[str, Any]:
     """Serialize an IncidentModel to the IncidentSummary shape."""
     return {
@@ -160,6 +299,7 @@ def _incident_summary_dict(
         "latest_event_time": incident.latest_event_time,
         "events_count": events_count,
         "confidence": incident.confidence,
+        "source_ips": source_ips or [],
     }
 
 
