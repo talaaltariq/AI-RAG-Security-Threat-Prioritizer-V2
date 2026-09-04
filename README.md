@@ -1,102 +1,249 @@
-# ThreatIQ — AI RAG Security Threat Prioritizer Pro
+# ⚡ ThreatIQ — AI-Powered Security Threat Prioritizer Pro
 
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688.svg?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
-[![Next.js](https://img.shields.io/badge/Next.js-14.x-black.svg?logo=next.js&logoColor=white)](https://nextjs.org)
-[![Python](https://img.shields.io/badge/Python-3.11+-3776AB.svg?logo=python&logoColor=white)](https://www.python.org)
-[![Gemini](https://img.shields.io/badge/Google_Gemini-3.6_Flash-4285F4.svg?logo=google&logoColor=white)](https://ai.google.dev)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+<div align="center">
 
-> **ThreatIQ** is an AI-powered security alert triage and incident prioritization platform that fuses machine learning anomaly detection, asset criticality weighting, MITRE ATT&CK correlation, and Retrieval-Augmented Generation (RAG) to turn overwhelming alert noise into prioritized, explainable, evidence-backed incident response actions.
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688.svg?logo=fastapi&logoColor=white&style=flat-square)](https://fastapi.tiangolo.com)
+[![Next.js](https://img.shields.io/badge/Next.js-14.x-black.svg?logo=next.js&logoColor=white&style=flat-square)](https://nextjs.org)
+[![Python](https://img.shields.io/badge/Python-3.11+-3776AB.svg?logo=python&logoColor=white&style=flat-square)](https://www.python.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6.svg?logo=typescript&logoColor=white&style=flat-square)](https://www.typescriptlang.org)
+[![ChromaDB](https://img.shields.io/badge/Vector_DB-ChromaDB-fc6d26.svg?style=flat-square)](https://www.trychroma.com)
+[![Scikit-Learn](https://img.shields.io/badge/ML-Scikit--Learn-F7931E.svg?logo=scikit-learn&logoColor=white&style=flat-square)](https://scikit-learn.org)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](https://opensource.org/licenses/MIT)
+
+**Next-Generation Security Operations Intelligence: Unsupervised ML Anomaly Detection, Multi-Stage Attack Correlation, 7-Factor Composite Risk Scoring, and Hallucination-Resistant Retrieval-Augmented Generation (RAG).**
+
+[Live Dashboard](#soc-analyst-dashboard-walkthrough) • [Key Capabilities](#core-capabilities) • [Architecture](#system-architecture) • [Getting Started](#getting-started) • [API Documentation](#rest-api-reference)
+
+</div>
 
 ---
-<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/31a93dd2-71e4-4230-b9b6-285d9240d102" />
 
-## Key Highlights & Architecture
+## 📌 Overview
 
-ThreatIQ eliminates alert fatigue for Security Operations Center (SOC) analysts through an end-to-end multi-stage pipeline:
+Modern Security Operations Centers (SOCs) are overwhelmed by alert fatigue: tier-1 analysts wade through thousands of isolated alerts daily, with up to **80% false positives** and fragmented contextual data across disparate SIEM platforms.
+
+**ThreatIQ** solves this fundamental bottleneck. It acts as an autonomous AI-driven triage layer that:
+1. Ingests raw heterogeneous security telemetry (JSON, CSV, Syslog, SIEM events).
+2. Runs high-speed **Isolation Forest ML** for behavioral anomaly detection.
+3. Groups disparate events into cohesive multi-stage **attack chains** mapped directly to **MITRE ATT&CK®**.
+4. Computes a transparent, multi-factor **Composite Risk Score (0–100)** incorporating asset criticality and active exploit intelligence.
+5. Grounds generative AI reasoning using **ChromaDB Vector RAG** across curated CVEs, threat actor tactics, and containment playbooks.
+6. Delivers explainable, evidence-backed findings and downloadable, audit-ready **Executive PDF reports**.
+
+---
+
+## 🖼️ SOC Analyst Dashboard Walkthrough
+
+### 1. Executive Security Overview & Telemetry Velocity
+Real-time posture monitoring displaying total ingested events, AI-correlated incidents, critical triage workload, noise reduction metrics, and 7-day/14-day alert velocity charts.
+
+<div align="center">
+  <img src="docs/screenshots/02-security-overview-dashboard.png" alt="ThreatIQ Security Overview Dashboard" width="100%" />
+</div>
+
+> **SOC Insight**: Ingests 954 raw alerts, consolidates them into 606 correlated incidents, prioritizes the 2 critical emergencies, and eliminates **36.5% alert noise**.
+
+---
+
+### 2. First-Run Setup & Multi-Model LLM Configuration
+Effortlessly upload telemetry data (`.json` or `.csv`) and configure your choice of LLM reasoning provider (**Google Gemini**, **OpenAI GPT-4o**, **Anthropic Claude**, **Groq**, or local **Ollama**) with instant connection testing.
+
+<div align="center">
+  <img src="docs/screenshots/01-setup-and-configuration.png" alt="ThreatIQ Setup & Model Configuration" width="100%" />
+</div>
+
+---
+
+### 3. Correlated Threat Queue Ranked by Risk Score
+Dynamic triage queue ranking correlated incidents by their composite risk score. Filter instantaneously across **Critical**, **High**, **Medium**, and **Low** severity bands, search by target asset, IP, or MITRE technique, and track live investigation statuses (**Active**, **Under Review**, **Contained**, **Resolved**).
+
+<div align="center">
+  <img src="docs/screenshots/03-threat-queue.png" alt="ThreatIQ Prioritized Threat Queue" width="100%" />
+</div>
+
+---
+
+### 4. Deep-Dive Incident Triage & 4-Tier AI Reasoning
+Comprehensive incident view featuring a radial composite risk score gauge, granular 7-factor mathematical score breakdown, and our structured, 4-tier hallucination-resistant AI explanation:
+- **Observed Evidence**: Verifiable facts extracted directly from telemetry.
+- **Retrieved Context**: Semantic matches from the ChromaDB vector database (MITRE ATT&CK techniques, CVEs).
+- **AI Interpretation**: Attacker motivation, blast radius, and tactical stage analysis.
+- **Recommended Action**: Concrete CLI, firewall, and host isolation remediation commands.
+
+<div align="center">
+  <img src="docs/screenshots/04-incident-ai-analysis.png" alt="ThreatIQ Deep Dive Incident Analysis" width="100%" />
+</div>
+
+---
+
+### 5. Dynamic Pipeline Settings & Anomaly Sensitivity Tuning
+Adjust the Isolation Forest anomaly cutoff threshold (5%–95%), calibrate custom score boundaries for Critical/High/Medium/Low tiers, inspect ChromaDB vector collection health, and toggle explanation pre-caching for near-zero analyst latency.
+
+<div align="center">
+  <img src="docs/screenshots/05-pipeline-settings.png" alt="ThreatIQ Pipeline Settings and Diagnostics" width="100%" />
+</div>
+
+---
+
+## ⚡ Core Capabilities
+
+| Feature | Description |
+| :--- | :--- |
+| **⚡ High-Throughput Anomaly Detection** | Sub-millisecond behavioral feature extraction and Scikit-Learn Isolation Forest scoring with persistent configurable cutoff thresholds. |
+| **🔗 Attack-Chain Graph Correlation** | Temporal windowing and host/identity clustering that stitches related alerts across lateral movements into coherent multi-stage incidents. |
+| **🎯 7-Factor Composite Risk Scoring** | Transparent, mathematically sound scoring formula ($0-100$) evaluating severity, anomaly confidence, asset criticality, exploitability, evidence volume, recency, and threat intel relevance. |
+| **📚 Vector-Grounded Security RAG** | High-performance ChromaDB vector search indexing MITRE ATT&CK enterprise tactics, techniques, mitigations, and known exploited vulnerabilities (CVEs). |
+| **🧠 Multi-Provider AI Reasoning** | Dynamic runtime support for Google Gemini Flash, OpenAI, Anthropic Claude, Groq LLaMA-3, and self-hosted Ollama with pre-generation caching. |
+| **📑 Executive PDF Reporting Engine** | Automated ReportLab PDF generator compiling executive summaries, severity distributions, threat intel mappings, and containment playbooks. |
+| **🛡️ Human-in-the-Loop Mitigations** | State machine tracking incident lifecycle transitions (`Active` $\to$ `Under Review` $\to$ `Contained` $\to$ `Resolved`) with audit logging. |
+| **🎨 Modern Cyber SOC UI** | Cyberpunk-inspired dark/light theme, custom glassmorphic panels, animated risk gauges, and responsive data tables built with Next.js 14 & Tailwind CSS. |
+
+---
+
+## 🏗️ System Architecture
 
 ```
-[ Raw Security Events ]
-          │
-          ▼
-┌───────────────────────────┐
-│  Fast Anomaly Detector    │ ──► Isolation Forest (Numeric & behavioral features)
-└─────────┬─────────────────┘
-          │
-          ▼
-┌───────────────────────────┐
-│  Event Correlator         │ ──► Graph & Time-Window Aggregator (MITRE ATT&CK TTPs)
-└─────────┬─────────────────┘
-          │
-          ▼
-┌───────────────────────────┐
-│  Composite Risk Scorer    │ ──► 0-100 Score = Anomaly + Asset Criticality + Severity
-└─────────┬─────────────────┘
-          │
-          ▼
-┌───────────────────────────┐
-│  RAG Knowledge Retriever  │ ──► ChromaDB Vector Store (CVEs, MITRE Tactics, Playbooks)
-└─────────┬─────────────────┘
-          │
-          ▼
-┌───────────────────────────┐
-│  LLM Reasoning Engine     │ ──► Google Gemini Flash (Cached & On-Demand Explanations)
-└─────────┬─────────────────┘
-          │
-          ▼
-┌───────────────────────────┐
-│  Mitigation Engine        │ ──► Concrete CLI / Firewall / Containment Commands
-└─────────┬─────────────────┘
-          │
-          ▼
-[ Real-Time SOC Dashboard (Next.js 14) ]
+                                      ┌──────────────────────────────────────┐
+                                      │   Raw Security Telemetry / Events    │
+                                      │       (JSON, CSV, Syslog, EDR)       │
+                                      └──────────────────┬───────────────────┘
+                                                         │
+                                                         ▼
+                                      ┌──────────────────────────────────────┐
+                                      │       Ingestion & Normalizer         │
+                                      │ (Timestamp, IP, Host, Action parsing)│
+                                      └──────────────────┬───────────────────┘
+                                                         │
+                                                         ▼
+                                      ┌──────────────────────────────────────┐
+                                      │    Fast-Path Anomaly Detector        │
+                                      │   (Isolation Forest ML Model)        │
+                                      └──────────────────┬───────────────────┘
+                                                         │ Anomaly Score (0.0 - 1.0)
+                                                         ▼
+                                      ┌──────────────────────────────────────┐
+                                      │      Attack-Chain Correlator         │
+                                      │(Time Window & MITRE Graph Clustering)│
+                                      └──────────────────┬───────────────────┘
+                                                         │
+                                                         ▼
+                                      ┌──────────────────────────────────────┐
+                                      │     Composite Risk Scoring Engine    │
+                                      │      (0 - 100 Multi-Factor Score)    │
+                                      └─────────┬──────────────────┬─────────┘
+                                                │                  │
+                         High / Critical Filter │                  │ Low / Medium
+                                                ▼                  ▼
+┌────────────────────────────────────────────────────────┐  ┌──────────────────┐
+│              RAG Knowledge Retriever                  │  │ SQLite Database  │
+│   (ChromaDB Vector Store: MITRE TTPs + CVE Catalog)    │  │ (Direct Storage) │
+└───────────────────────┬────────────────────────────────┘  └──────────────────┘
+                        │ Semantically Matched Context
+                        ▼
+┌────────────────────────────────────────────────────────┐
+│               LLM Reasoning Layer                      │
+│   (Google Gemini / Claude / GPT / Groq / Ollama)       │
+│  Outputs: Evidence, Context, Interpretation, Action    │
+└───────────────────────┬────────────────────────────────┘
+                        │
+                        ▼
+┌────────────────────────────────────────────────────────┐
+│           Presentation & Consumption Layer             │
+│  ├─ Next.js 14 SOC Analyst Dashboard                   │
+│  ├─ Audit-Ready Executive PDF Report Generator         │
+│  └─ RESTful API (FastAPI OpenAPI/Swagger)              │
+└────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Features
+## 📐 Composite Risk Scoring Methodology
 
-- **⚡ Fast-Path Anomaly Detection**: High-throughput Isolation Forest model classifying events in sub-milliseconds.
-- **🔗 Smart Attack-Chain Correlation**: Clusters disparate events across network hosts and time windows into actionable Incidents mapped to MITRE ATT&CK.
-- **🎯 Dynamic Composite Risk Scoring**: Calculates normalized risk scores ($0-100$) factoring in asset value, anomaly confidence, blast radius, and historical frequency.
-- **📚 Security Knowledge RAG**: ChromaDB semantic search over curated security playbooks, CVE catalogs, and threat intelligence feeds.
-- **🧠 Explainable AI Incident Reasoning**: Plain-English, step-by-step incident explanations explaining *What Happened*, *Root Cause*, and *Immediate Impact*.
-- **🛡️ Actionable Mitigation Playbooks**: Automated generation of exact remediation steps, firewall rules, and containment commands.
-- **🖥️ SOC Analyst Dashboard**: Cyberpunk/Glassmorphic dark UI built with Next.js 14, Tailwind CSS, Lucide icons, live event streams, incident filters, and instant demo replay.
-<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/f55e39ce-07e3-468f-a1fb-e690c2ec4ccc" />
-<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/41e246b9-995a-466f-ab4c-e3d35c451119" />
+ThreatIQ avoids opaque "black-box" scoring. Each incident's Composite Risk Score ($0-100$) is computed across seven transparent, explainable factors:
 
+$$\text{Total Score} = \sum_{i=1}^{7} \text{Factor Points}_i$$
 
----
-
-## Tech Stack
-
-- **Backend**: Python 3.11+, FastAPI, SQLAlchemy, Pydantic v2, Scikit-learn, ChromaDB, LangChain, Google Gemini API
-- **Frontend**: Next.js 14 (App Router), TypeScript, Tailwind CSS, Radix UI, Lucide React
-- **Storage**: SQLite (relational incidents/events), ChromaDB (vector embeddings)
+| Factor | Max Points | Weighting Rationale |
+| :--- | :---: | :--- |
+| **Base Severity** | **20 pts** | Derived from primary alert classification (Critical: 20, High: 15, Medium: 10, Low: 5). |
+| **Anomaly Score** | **20 pts** | Isolation Forest output scaled linearly ($Score \times 20$). |
+| **Asset Criticality** | **20 pts** | Crown jewel weighting (e.g., Domain Controllers & Production Databases: 20 pts, User Workstations: 5 pts). |
+| **Exploitability** | **15 pts** | Active CISA KEV / public weaponized exploit (+15 pts), known PoC (+10 pts). |
+| **Evidence Count** | **10 pts** | Number of correlated events confirming multi-stage persistence ($min(count \times 2.5, 10)$). |
+| **Recency** | **10 pts** | Time-decay factor rewarding rapid intervention on recent active intrusions. |
+| **Threat Intel Relevance**| **5 pts** | Direct correlation with known APT campaigns or high-priority threat feeds. |
 
 ---
 
-## Getting Started
+## 🗂️ Repository Structure
+
+```
+AI-RAG-Security-Threat-Prioritizer-Pro/
+├── backend/
+│   ├── api/                     # FastAPI endpoint routers
+│   │   ├── incidents.py         # Incident list, detail, and lifecycle actions
+│   │   ├── ingest.py            # Event batch ingestion & fast-path processing
+│   │   ├── llm_config.py        # Multi-provider model configuration & test API
+│   │   ├── reports.py           # Executive PDF report generation endpoint
+│   │   ├── settings.py          # Dynamic pipeline & scoring thresholds
+│   │   ├── stats.py             # Dashboard KPIs and alert velocity metrics
+│   │   └── upload.py            # Telemetry file parser (JSON / CSV)
+│   ├── correlation/             # Temporal & graph-based event correlator
+│   ├── database/                # SQLAlchemy ORM models, session & migrations
+│   ├── demo_data/               # Static telemetry and pre-cached explanations
+│   ├── detection/               # Behavioral feature extraction & Isolation Forest
+│   ├── llm/                     # Provider adapters (Gemini, Claude, GPT, Ollama)
+│   ├── mitigation/              # Analyst action state machine
+│   ├── models/                  # Pydantic schemas (events, incidents, metrics)
+│   ├── models_config/           # Settings & configuration data models
+│   ├── rag/                     # ChromaDB vector store & knowledge retriever
+│   ├── reports/                 # ReportLab PDF design and canvas builder
+│   ├── scoring/                 # 7-factor composite risk calculator
+│   ├── tests/                   # Test suite (anomaly, database, scoring, e2e)
+│   ├── main.py                  # FastAPI application entrypoint
+│   └── requirements.txt         # Backend Python dependencies
+├── frontend/
+│   ├── app/                     # Next.js 14 App Router
+│   │   ├── page.tsx             # Executive Security Overview Dashboard
+│   │   ├── setup/               # Telemetry upload & LLM provider setup
+│   │   ├── threats/             # Correlated Threat Queue & Incident Deep Dive
+│   │   ├── settings/            # Pipeline sensitivity & threshold controls
+│   │   └── layout.tsx           # Dashboard root shell with cyber navigation
+│   ├── components/              # Modular UI components (charts, cards, queue)
+│   ├── lib/                     # API client, TypeScript definitions & utils
+│   ├── public/                  # Static assets & ThreatIQ brand logos
+│   └── tailwind.config.ts       # Design system tokens and styling rules
+├── docs/
+│   └── screenshots/             # Production UI screenshots
+├── scripts/                     # Verification, demo seeding, and setup scripts
+├── .gitignore                   # Security exclusions (keys, venv, databases)
+└── README.md                    # Project documentation
+```
+
+---
+
+## 🚀 Getting Started
 
 ### Prerequisites
-- Python 3.11 or higher
-- Node.js 18.x or higher & npm
-- Google Gemini API Key (optional for live LLM explanations; pre-generated demo data included)
+
+- **Python**: 3.11 or higher
+- **Node.js**: 18.x or higher & npm
+- **API Key** *(Optional)*: Google Gemini, OpenAI, or Anthropic API key (ThreatIQ includes pre-generated demo intelligence out of the box).
 
 ---
 
 ### Backend Setup
 
-1. **Navigate to the backend directory**:
+1. **Clone the repository**:
    ```bash
-   cd backend
+   git clone https://github.com/talaaltariq/AI-RAG-Security-Threat-Prioritizer-V2.git
+   cd AI-RAG-Security-Threat-Prioritizer-V2
    ```
 
-2. **Create and activate a virtual environment**:
+2. **Create and activate a Python virtual environment**:
    ```bash
    # Linux / macOS
-   python -m venv venv
+   python3 -m venv venv
    source venv/bin/activate
 
    # Windows
@@ -106,27 +253,20 @@ ThreatIQ eliminates alert fatigue for Security Operations Center (SOC) analysts 
 
 3. **Install dependencies**:
    ```bash
-   pip install -r requirements.txt
+   pip install -r backend/requirements.txt
    ```
 
-4. **Configure environment variables**:
+4. **Initialize Knowledge Base & Demo Database**:
    ```bash
-   cp .env.example .env
-   # Edit .env and supply your GEMINI_API_KEY if desired
-   ```
-
-5. **Initialize Database and Knowledge Base**:
-   ```bash
-   # From the project root
    python scripts/build_knowledge_base.py
    python scripts/reset_demo_db.py
    ```
 
-6. **Start the FastAPI Server**:
+5. **Start the FastAPI server**:
    ```bash
    uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
    ```
-   The backend API will be available at `http://localhost:8000` (API Docs: `http://localhost:8000/docs`).
+   The backend API will be available at `http://localhost:8000`. Interactive OpenAPI documentation is accessible at `http://localhost:8000/docs`.
 
 ---
 
@@ -143,8 +283,9 @@ ThreatIQ eliminates alert fatigue for Security Operations Center (SOC) analysts 
    ```
 
 3. **Configure environment variables**:
-   ```bash
-   cp .env.example .env.local
+   Create a `.env.local` file:
+   ```env
+   NEXT_PUBLIC_API_URL=http://localhost:8000
    ```
 
 4. **Start the Next.js development server**:
@@ -155,60 +296,71 @@ ThreatIQ eliminates alert fatigue for Security Operations Center (SOC) analysts 
 
 ---
 
-## Project Structure
+## 🧪 Verification & Automated Tests
 
-```
-├── backend/
-│   ├── api/                 # FastAPI routes (incidents, ingest, stats, settings, pregen)
-│   ├── correlation/         # Event correlation and attack-chain grouping
-│   ├── database/            # SQLAlchemy DB models and session management
-│   ├── demo_data/           # Static demo telemetry and pre-generated AI explanations
-│   ├── detection/           # Feature extraction & Isolation Forest anomaly detection
-│   ├── llm/                 # Gemini prompt builders, explainer & incident cache
-│   ├── mitigation/          # Mitigation recommendation generators
-│   ├── models/              # Pydantic schemas (events, incidents, settings)
-│   ├── rag/                 # ChromaDB retriever and knowledge base
-│   ├── scoring/             # Composite risk scoring formulas
-│   ├── tests/               # Test suites (unit, integration, e2e)
-│   ├── main.py              # FastAPI application entrypoint
-│   └── requirements.txt     # Python backend dependencies
-├── frontend/
-│   ├── app/                 # Next.js App Router (pages, layout, globals.css)
-│   ├── components/          # Reusable UI components (Incidents, Metrics, Ingest, Settings)
-│   ├── lib/                 # Utility functions & API clients
-│   └── tailwind.config.ts   # Styling tokens & glassmorphism theme
-├── scripts/                 # Utility scripts (KB builder, demo generator, verifications)
-└── README.md                # Project documentation
-```
-
----
-
-## Running Tests
-
-Run the test suite to verify backend pipeline components:
+Run the backend verification suite to validate all pipeline stages:
 
 ```bash
+# Verify Pipeline Settings & Score Boundaries
+python scripts/verify_pipeline_settings.py
+
+# Verify Multi-Model LLM Configuration
+python scripts/verify_llm_config.py
+
+# Verify ChromaDB RAG Vector Store
+python scripts/verify_rag_settings.py
+
+# Execute Python Test Suite
 pytest backend/tests -v
 ```
 
----
+To build and validate the frontend production bundle:
 
-## Demo Scenario: "Operation Shadow DB"
-
-ThreatIQ comes with a built-in end-to-end multi-stage APT demonstration called **Operation Shadow DB**:
-1. **Reconnaissance**: Fast internal port scan on database asset.
-2. **Credential Stuffing**: High-volume authentication failure burst.
-3. **Lateral Movement**: Off-hour privileged database login.
-4. **Data Exfiltration**: Multi-gigabyte outbound encrypted transfer.
-5. **Persistence**: Unauthorized C2 reverse shell connection and shadow account creation.
-
-You can trigger this live through the UI's **Demo Scenarios** button or reset with:
 ```bash
-python scripts/reset_demo_db.py
+cd frontend
+npm run build
 ```
 
 ---
 
-## License
+## 🔌 REST API Reference
 
-This project is licensed under the MIT License.
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `GET` | `/api/stats` | Retrieves top-level KPI metrics and alert velocity breakdown. |
+| `GET` | `/api/incidents` | Fetches filtered, prioritized incidents with risk scores. |
+| `GET` | `/api/incidents/{id}` | Detailed incident analysis with RAG context & LLM explanation. |
+| `POST` | `/api/incidents/{id}/action`| Updates incident lifecycle status (`contain`, `resolve`, etc.). |
+| `POST` | `/api/ingest` | Ingests a raw security event batch for immediate triage. |
+| `POST` | `/api/upload` | Uploads and normalizes `.json` or `.csv` event log files. |
+| `GET` | `/api/settings` | Fetches active pipeline knobs and risk scoring thresholds. |
+| `PUT` | `/api/settings` | Updates anomaly cutoff and custom severity score boundaries. |
+| `GET` | `/api/llm/config` | Retrieves current LLM provider and model selection. |
+| `POST` | `/api/llm/test` | Verifies live API key connectivity to the configured LLM provider. |
+| `GET` | `/api/reports/incident/{id}/pdf` | Generates and streams an audit-ready executive PDF report. |
+
+---
+
+## 🛡️ Attack Scenario: "Operation Shadow DB"
+
+ThreatIQ includes a complete multi-stage Advanced Persistent Threat (APT) simulation:
+
+```
+[Phase 1: Recon] ────────► Internal port scan detected on production database (prod-db-01)
+[Phase 2: Access] ───────► High-volume credential stuffing against administrative accounts
+[Phase 3: Pivot] ────────► Off-hours lateral movement using harvested credentials
+[Phase 4: C2 & Staging] ─► Reverse shell established (MITRE T1059 / T1573)
+[Phase 5: Exfiltration] ─► Outbound encrypted data exfiltration over C2 channel (MITRE T1041)
+```
+
+The correlation engine automatically clusters these individual events into a unified incident, flags the anomaly, weights target asset criticality (`prod-db-01` = CRITICAL), retrieves matching MITRE intelligence, and generates a **91/100 Composite Risk Score** with concrete containment steps.
+
+---
+
+## 📜 License
+
+This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for details.
+
+<div align="center">
+Built with precision for security teams protecting mission-critical infrastructure.
+</div>
