@@ -1,0 +1,29 @@
+# ThreatIQ backend hosting blueprint for Render (https://render.com).
+#
+# The Next.js frontend deploys to Vercel (see DEPLOYMENT.md); this FastAPI
+# backend needs a long-running host because it is stateful (SQLite database,
+# ChromaDB vector store, scikit-learn model) and its dependency bundle far
+# exceeds Vercel's serverless function size/timeout limits.
+#
+# Deploy: Render dashboard -> New -> Blueprint -> select this repository.
+# GEMINI_API_KEY and CORS_ORIGINS are prompted during blueprint creation
+# (sync: false) so secrets never live in this file.
+
+services:
+  - type: web
+    name: threatiq-backend
+    runtime: python
+    plan: free
+    region: oregon
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GOOGLE_API_KEY
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false

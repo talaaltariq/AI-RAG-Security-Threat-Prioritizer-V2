@@ -19,6 +19,7 @@ hard-coded.
 """
 
 import logging
+import os
 import sys
 import time
 from contextlib import asynccontextmanager
@@ -84,7 +85,12 @@ async def lifespan(app: FastAPI):
 
     logger.info("ThreatIQ startup: loading RAG knowledge base.")
     try:
-        knowledge_base = KnowledgeBase()
+        knowledge_base = KnowledgeBase(
+            # Deployment: CHROMA_PERSIST_DIR relocates the vector store
+            # (e.g. onto a mounted persistent disk); unset keeps the default
+            # backend/data/chroma_db location.
+            persist_directory=os.getenv("CHROMA_PERSIST_DIR") or None
+        )
         knowledge_base.load_mitre_attack(str(_DATA_DIR / "mitre_attack.json"))
         knowledge_base.load_cve_summaries(str(_DATA_DIR / "cve_summaries.json"))
         app.state.rag_retriever = RAGRetriever(knowledge_base)
@@ -127,10 +133,22 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="ThreatIQ", version="1.0.0", lifespan=lifespan)
 
+# Deployment: allowed origins come from the CORS_ORIGINS environment
+# variable as a comma-separated list (or "*" to allow every origin).
+# Defaults to the local frontend so development behavior is unchanged.
+_cors_raw = os.getenv("CORS_ORIGINS", "http://localhost:3000").strip()
+_allow_all_origins = _cors_raw == "*"
+_allow_origins = (
+    ["*"]
+    if _allow_all_origins
+    else [origin.strip() for origin in _cors_raw.split(",") if origin.strip()]
+)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # Only the local frontend
-    allow_credentials=True,
+    allow_origins=_allow_origins,
+    # Wildcard "*" cannot be combined with credentials (browser rule).
+    allow_credentials=not _allow_all_origins,
     allow_methods=["GET", "POST", "PUT"],  # verbs exposed by the API
     allow_headers=["*"],
 )
