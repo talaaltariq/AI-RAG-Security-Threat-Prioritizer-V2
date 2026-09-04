@@ -74,7 +74,17 @@ def test_llm_connection(config: LLMConfig) -> Dict[str, Any]:
     """
     global _session_config
     _session_config = config
+    return probe_llm(config)
 
+
+def probe_llm(config: LLMConfig) -> Dict[str, Any]:
+    """Probe an LLM config without touching the session config.
+
+    Same behaviour as the test-connection endpoint, minus the
+    ``_session_config`` side effect — used by /api/settings/probe-health
+    to re-probe either the session config or the env-var-configured
+    fallback.
+    """
     try:
         llm = _build_test_client(config)
     except Exception as exc:  # noqa: BLE001 - structured response, never raise

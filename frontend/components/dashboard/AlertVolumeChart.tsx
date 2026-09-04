@@ -37,7 +37,7 @@ export function AlertVolumeChart({ stats, incidents }: AlertVolumeChartProps) {
   const chartData = useMemo(() => {
     const days = timeRange === "7d" ? 7 : 14;
     const result = [];
-    const baseEvents = Math.max(stats.total_events_today, 50);
+    const baseEvents = Math.max(stats.total_events, 50);
     const baseIncidents = Math.max(stats.total_incidents, incidents.length, 12);
 
     const dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -51,7 +51,7 @@ export function AlertVolumeChart({ stats, incidents }: AlertVolumeChartProps) {
 
       // Variance factor for organic trend curves
       const factor = 0.75 + Math.sin(i * 1.3) * 0.22 + ((i * 7) % 5) * 0.04;
-      const rawEvents = i === 0 ? stats.total_events_today : Math.round(baseEvents * factor);
+      const rawEvents = i === 0 ? stats.total_events : Math.round(baseEvents * factor);
       const incidentCount = i === 0 ? stats.total_incidents : Math.round(baseIncidents * factor);
 
       result.push({

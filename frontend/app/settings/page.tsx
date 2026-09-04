@@ -579,13 +579,21 @@ export default function SettingsPage() {
                 <ProbeRow
                   label="Vector Store"
                   status={probeResult.vector_store.status}
-                  extra={`${probeResult.vector_store.mitre_count} MITRE · ${probeResult.vector_store.cve_count} CVEs`}
+                  extra={
+                    probeResult.vector_store.status === "ok"
+                      ? `${probeResult.vector_store.mitre_count} MITRE · ${probeResult.vector_store.cve_count} CVEs`
+                      : "ChromaDB unavailable — check backend logs"
+                  }
                 />
                 <ProbeRow
                   label="LLM Reasoner"
                   status={probeResult.llm.status}
                   latencyMs={probeResult.llm.latency_ms}
-                  extra={probeResult.llm.status === "error" ? probeResult.llm.message : undefined}
+                  extra={
+                    probeResult.llm.status === "ok"
+                      ? `${probeResult.llm.provider ?? "llm"} · ${probeResult.llm.model ?? "unknown"} (${probeResult.llm.source ?? "env"})`
+                      : probeResult.llm.message
+                  }
                 />
               </div>
             ) : (
@@ -619,7 +627,7 @@ export default function SettingsPage() {
               </div>
               <div className="flex justify-between">
                 <span className="text-white/50">Vector Store</span>
-                <span className="font-mono text-white">ChromaDB In-Memory</span>
+                <span className="font-mono text-white">ChromaDB Persistent (backend/data/chroma_db)</span>
               </div>
             </div>
           </div>
@@ -803,8 +811,12 @@ function ProbeRow({
         )}
         {label}
       </span>
-      <span className="flex items-center gap-2 text-right">
-        {extra && <span className="text-[11px] font-medium text-[#8A8F98]">{extra}</span>}
+      <span className="flex min-w-0 items-center gap-2 text-right">
+        {extra && (
+          <span className="max-w-[240px] truncate text-[11px] font-medium text-[#8A8F98]" title={extra}>
+            {extra}
+          </span>
+        )}
         {latencyMs != null && (
           <span className="font-bold text-[#0D0D10]">{latencyMs} ms</span>
         )}

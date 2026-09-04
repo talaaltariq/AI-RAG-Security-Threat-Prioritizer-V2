@@ -56,6 +56,7 @@ def get_stats(db: Session = Depends(get_db)) -> Dict[str, Any]:
         alert_reduction_pct = 0.0
 
     stats = {
+        "total_events": total_events,
         "total_events_today": total_events_today,
         "total_incidents": total_incidents,
         "alert_reduction_pct": alert_reduction_pct,

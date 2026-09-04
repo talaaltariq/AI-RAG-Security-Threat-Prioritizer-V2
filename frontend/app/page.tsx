@@ -130,11 +130,11 @@ export default function DashboardPage() {
     );
   }
 
-  // Raw alerts derived from reduction ratio or today's events
+  // Raw alerts derived from reduction ratio or total ingested events
   const rawAlerts =
     stats.alert_reduction_pct > 0 && stats.alert_reduction_pct < 100
       ? Math.round(stats.total_incidents / (1 - stats.alert_reduction_pct / 100))
-      : Math.max(stats.total_events_today, stats.total_incidents);
+      : Math.max(stats.total_events, stats.total_incidents);
 
   return (
     <div className="flex flex-col gap-7">
@@ -232,7 +232,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           title="Total Events"
-          value={stats.total_events_today}
+          value={stats.total_events}
           subtitle="Ingested telemetry events"
           imageSrc="/icons/total-events.png"
           trend="neutral"

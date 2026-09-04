@@ -15,8 +15,10 @@ from pydantic import BaseModel
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from backend.api.llm_config import get_session_llm_config, test_llm_connection
+from backend.api.llm_config import get_session_llm_config, probe_llm
 from backend.database.db import get_db
+from backend.llm.config_models import LLMConfig
+from backend.llm.explainer import DEFAULT_MODEL
 from backend.models.settings import ThreatIQSettings
 from backend.models_config.pipeline_settings import (
     PipelineSettings,
@@ -193,13 +195,38 @@ def probe_health(request: Request, db: Session = Depends(get_db)) -> Dict[str, A
         logger.warning("probe-health vector_store check failed: %s", exc)
         results["vector_store"] = {"status": "error", "mitre_count": 0, "cve_count": 0}
 
-    # d. LLM: re-probe the session's configured LLM, if one exists.
+    # d. LLM: re-probe the session's configured LLM if one exists,
+    # otherwise fall back to the env-var configuration (GEMINI_API_KEY /
+    # GOOGLE_API_KEY + LLM_MODEL) that the explainer itself was built from.
     try:
         session_config = get_session_llm_config()
-        if session_config is None:
-            results["llm"] = {"status": "not_configured"}
+        if session_config is not None:
+            probe = probe_llm(session_config)
+            probe["source"] = "session"
+            probe["provider"] = session_config.provider
+            probe["model"] = session_config.model
+            results["llm"] = probe
         else:
-            results["llm"] = test_llm_connection(session_config)
+            api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+            if not api_key:
+                results["llm"] = {
+                    "status": "not_configured",
+                    "message": (
+                        "No LLM configured. Set GEMINI_API_KEY / "
+                        "GOOGLE_API_KEY in backend/.env or configure one "
+                        "via Setup."
+                    ),
+                }
+            else:
+                model = os.getenv("LLM_MODEL", DEFAULT_MODEL)
+                env_config = LLMConfig(
+                    provider="gemini", model=model, api_key=api_key
+                )
+                probe = probe_llm(env_config)
+                probe["source"] = "environment"
+                probe["provider"] = "gemini"
+                probe["model"] = model
+                results["llm"] = probe
     except Exception as exc:  # noqa: BLE001
         logger.warning("probe-health llm check failed: %s", exc)
         results["llm"] = {"status": "error", "raw_detail": str(exc)}
