@@ -147,10 +147,10 @@ _allow_origins = (
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_allow_origins,
-    allow_origin_regex=r"https?://.*(\.ngrok-free\.app|\.ngrok-free\.dev|\.ngrok\.io)(:\d+)?",
+    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:\d+)?|https?://.*(\.ngrok-free\.app|\.ngrok-free\.dev|\.ngrok\.io|\.vercel\.app)(:\d+)?",
     # Wildcard "*" cannot be combined with credentials (browser rule).
     allow_credentials=not _allow_all_origins,
-    allow_methods=["GET", "POST", "PUT"],  # verbs exposed by the API
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
