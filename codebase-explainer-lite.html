@@ -1,0 +1,1264 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ThreatIQ — Hackathon Cheat Sheet & Architecture Explainer (Lite)</title>
+    <!-- NO EXTERNAL SCRIPTS, NO MERMAID CDN, ZERO NETWORK REQUESTS (100% OFFLINE) -->
+    <style>
+        :root {
+            --bg-canvas: #0C0E12;
+            --bg-surface: #14171F;
+            --bg-elevated: #1C202B;
+            --bg-subtle: #262C3A;
+            --border: rgba(255, 255, 255, 0.08);
+            --border-hover: rgba(216, 250, 66, 0.35);
+            --text-main: #F4F7FC;
+            --text-sub: #94A3B8;
+            --text-muted: #64748B;
+            --lime: #D8FA42;
+            --lime-bg: rgba(216, 250, 66, 0.12);
+            --teal: #36C6AF;
+            --teal-bg: rgba(54, 198, 175, 0.12);
+            --coral: #EF4444;
+            --coral-bg: rgba(239, 68, 68, 0.12);
+            --radius-sm: 6px;
+            --radius-md: 10px;
+            --radius-lg: 14px;
+        }
+
+        html.light {
+            --bg-canvas: #F4F7FC;
+            --bg-surface: #FFFFFF;
+            --bg-elevated: #F8FAFC;
+            --bg-subtle: #E2E8F0;
+            --border: rgba(0, 0, 0, 0.08);
+            --border-hover: rgba(54, 198, 175, 0.4);
+            --text-main: #0F172A;
+            --text-sub: #475569;
+            --text-muted: #94A3B8;
+            --lime: #16A34A;
+            --lime-bg: rgba(22, 163, 74, 0.12);
+            --teal: #0D9488;
+            --teal-bg: rgba(13, 148, 136, 0.12);
+            --coral: #DC2626;
+            --coral-bg: rgba(220, 38, 38, 0.12);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: var(--bg-canvas);
+            color: var(--text-main);
+            line-height: 1.5;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        code, pre, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+
+        /* Header */
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: var(--bg-canvas);
+            border-bottom: 1px solid var(--border);
+            padding: 0.75rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            font-weight: 800;
+            font-size: 1.15rem;
+            letter-spacing: -0.02em;
+        }
+        .brand-badge {
+            background: var(--lime);
+            color: #0C0E12;
+            font-size: 0.7rem;
+            padding: 0.15rem 0.45rem;
+            border-radius: var(--radius-sm);
+            text-transform: uppercase;
+            font-weight: 800;
+        }
+        .nav-tabs {
+            display: flex;
+            gap: 0.4rem;
+        }
+        .tab-btn {
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--text-sub);
+            padding: 0.45rem 0.85rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .tab-btn:hover { color: var(--text-main); background: var(--bg-elevated); }
+        .tab-btn.active { color: var(--lime); background: var(--lime-bg); border-color: var(--border-hover); }
+        .theme-btn {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            color: var(--text-sub);
+            padding: 0.45rem 0.65rem;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        /* Content Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1.5rem;
+            width: 100%;
+            flex: 1;
+        }
+
+        .page-panel { display: none; }
+        .page-panel.active { display: block; animation: fadeIn 0.15s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Hero Pitch */
+        .pitch-banner {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border-left: 4px solid var(--lime);
+        }
+        .pitch-title { font-size: 1.25rem; font-weight: 800; margin-bottom: 0.5rem; }
+        .pitch-title span { color: var(--lime); }
+        .pitch-text { font-size: 0.95rem; color: var(--text-sub); line-height: 1.6; margin-bottom: 0.75rem; }
+        .pitch-stats {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            border-top: 1px solid var(--border);
+            padding-top: 0.75rem;
+            font-size: 0.85rem;
+        }
+        .pitch-stat-item strong { color: var(--lime); font-family: monospace; font-size: 1rem; }
+
+        /* Section Headings */
+        .sec-head {
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin: 1.75rem 0 0.75rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .sec-head::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--lime);
+        }
+
+        /* Feature Bullets & Limitations */
+        .bullet-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+        .bullet-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 0.85rem 1rem;
+            font-size: 0.88rem;
+        }
+        .bullet-card strong { color: var(--text-main); display: block; margin-bottom: 0.2rem; }
+        .bullet-card p { color: var(--text-sub); line-height: 1.4; }
+
+        /* Tech Stack Table / Cards */
+        .tech-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+        }
+        .tech-table th { background: var(--bg-elevated); padding: 0.6rem 0.85rem; text-align: left; color: var(--text-sub); font-size: 0.75rem; text-transform: uppercase; }
+        .tech-table td { padding: 0.65rem 0.85rem; border-top: 1px solid var(--border); color: var(--text-sub); }
+        .tech-table td strong { color: var(--lime); }
+
+        /* PURE HTML/CSS DIAGRAMS (NO MERMAID, ZERO DEPENDENCY) */
+        .css-diagram-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 1.25rem;
+            margin-bottom: 1.5rem;
+        }
+        .diagram-title { font-size: 1rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.4rem; }
+        .diagram-urdu {
+            font-size: 0.85rem;
+            color: var(--text-sub);
+            background: var(--bg-elevated);
+            padding: 0.6rem 0.85rem;
+            border-left: 3px solid var(--teal);
+            border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+            margin-bottom: 1rem;
+            line-height: 1.5;
+        }
+        .diagram-urdu strong { color: var(--lime); }
+
+        /* Diagram 1: Architecture Flex Pipeline */
+        .arch-flow {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 1rem;
+            background: #080A0E;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border);
+        }
+        .arch-box {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 0.6rem 0.85rem;
+            text-align: center;
+            min-width: 140px;
+            font-size: 0.8rem;
+        }
+        .arch-box.client { border-color: #3B82F6; border-top: 3px solid #3B82F6; }
+        .arch-box.backend { border-color: var(--lime); border-top: 3px solid var(--lime); }
+        .arch-box.ai { border-color: var(--teal); border-top: 3px solid var(--teal); }
+        .arch-box.store { border-color: #EAB308; border-top: 3px solid #EAB308; }
+        .arch-arrow { color: var(--text-muted); font-size: 1.2rem; font-weight: 800; }
+
+        /* Diagram 2: Step Flow */
+        .step-sequence {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            padding: 1rem;
+            background: #080A0E;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border);
+        }
+        .step-row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 0.5rem 0.75rem;
+            font-size: 0.82rem;
+        }
+        .step-badge {
+            background: var(--lime);
+            color: #0C0E12;
+            font-weight: 800;
+            padding: 0.1rem 0.4rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-family: monospace;
+        }
+        .step-arrow-down { text-align: center; color: var(--lime); font-size: 0.9rem; line-height: 0.5; }
+
+        /* Tree structure */
+        .folder-tree {
+            background: #080A0E;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 1rem;
+            font-family: monospace;
+            font-size: 0.82rem;
+            color: var(--teal);
+            line-height: 1.5;
+            overflow-x: auto;
+        }
+        .folder-tree .comment { color: var(--text-muted); }
+
+        /* Demo Flow Steps */
+        .demo-steps-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+            margin-bottom: 1.5rem;
+        }
+        .demo-step {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 0.85rem 1rem;
+            display: flex;
+            gap: 0.75rem;
+            align-items: flex-start;
+        }
+        .demo-num {
+            background: var(--lime-bg);
+            color: var(--lime);
+            border: 1px solid var(--border-hover);
+            font-weight: 800;
+            font-size: 0.75rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: var(--radius-sm);
+            font-family: monospace;
+        }
+
+        /* PAGE 2: JUDGE Q&A CARDS */
+        .qa-filter-bar {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.25rem;
+        }
+        .qa-chip {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            color: var(--text-sub);
+            padding: 0.35rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .qa-chip.active { background: var(--lime); color: #0C0E12; border-color: var(--lime); }
+
+        .qa-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 1.15rem;
+            margin-bottom: 0.75rem;
+            transition: border-color 0.15s;
+        }
+        .qa-card:hover { border-color: var(--border-hover); }
+        .qa-card.tough { border-left: 3px solid var(--coral); }
+        .qa-cat {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--teal);
+            margin-bottom: 0.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .qa-cat .tough-badge {
+            background: var(--coral-bg);
+            color: var(--coral);
+            padding: 0.1rem 0.35rem;
+            border-radius: 4px;
+            font-size: 0.65rem;
+        }
+        .qa-q {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 0.45rem;
+        }
+        .qa-a {
+            font-size: 0.88rem;
+            color: var(--text-sub);
+            line-height: 1.5;
+            background: var(--bg-elevated);
+            padding: 0.75rem;
+            border-radius: var(--radius-sm);
+        }
+
+        /* PAGE 3: COMPACT TILES GRID */
+        .tiles-search-input {
+            width: 100%;
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 0.65rem 1rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            outline: none;
+        }
+        .tiles-search-input:focus { border-color: var(--lime); }
+
+        .tiles-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 0.65rem;
+            margin-bottom: 2rem;
+        }
+        .tile-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 0.85rem;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+        .tile-card:hover { border-color: var(--lime); transform: translateY(-1px); }
+        .tile-head { display: flex; justify-content: space-between; align-items: center; }
+        .tile-name { font-family: monospace; font-size: 0.88rem; font-weight: 700; color: var(--text-main); }
+        .tile-badge { font-size: 0.65rem; padding: 0.1rem 0.35rem; border-radius: 4px; font-weight: 700; }
+        .tile-sub { font-size: 0.78rem; color: var(--text-sub); line-height: 1.35; }
+
+        /* Tile Modal / Pop-over */
+        .tile-modal-bg {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(4px);
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        .tile-modal-bg.active { display: flex; }
+        .tile-modal {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-hover);
+            border-radius: var(--radius-lg);
+            max-width: 580px;
+            width: 100%;
+            padding: 1.5rem;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+        .modal-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+        .modal-title { font-family: monospace; font-size: 1.1rem; font-weight: 700; color: var(--lime); }
+        .modal-close { background: none; border: none; color: var(--text-sub); font-size: 1.25rem; cursor: pointer; }
+        .modal-sec { margin-bottom: 0.85rem; font-size: 0.88rem; }
+        .modal-sec strong { color: var(--text-main); display: block; font-size: 0.78rem; text-transform: uppercase; color: var(--teal); margin-bottom: 0.2rem; }
+        .modal-sec p { color: var(--text-sub); line-height: 1.5; }
+
+        /* Footer */
+        .footer {
+            border-top: 1px solid var(--border);
+            padding: 1rem 1.5rem;
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: auto;
+        }
+
+        @media (max-width: 600px) {
+            .topbar { flex-direction: column; align-items: stretch; }
+            .nav-tabs { overflow-x: auto; }
+        }
+    </style>
+</head>
+<body>
+    <header class="topbar">
+        <div class="brand">
+            <span class="brand-badge">LITE</span>
+            <span>ThreatIQ</span>
+            <span style="font-weight: 400; font-size: 0.85rem; color: var(--text-sub);">| Hackathon Explainer</span>
+        </div>
+        <nav class="nav-tabs">
+            <button class="tab-btn active" onclick="showTab('cheatsheet')">1. Cheat Sheet</button>
+            <button class="tab-btn" onclick="showTab('qa')">2. Judge Q&A (18)</button>
+            <button class="tab-btn" onclick="showTab('tiles')">3. Compact Files</button>
+        </nav>
+        <button class="theme-btn" onclick="toggleTheme()" title="Toggle Theme">🌓</button>
+    </header>
+
+    <main class="container">
+        <!-- ==================== PAGE 1: HACKATHON CHEAT SHEET ==================== -->
+        <section id="tab-cheatsheet" class="page-panel active">
+            <!-- 30-Second Pitch -->
+            <div class="pitch-banner">
+                <h1 class="pitch-title">ThreatIQ — <span>30-Second Hackathon Pitch</span></h1>
+                <p class="pitch-text">
+                    <strong>The Problem:</strong> SOC (Security Operations Center) analysts face thousands of disconnected alerts every single day ("Alert Fatigue"), leading to missed ransomware and zero-day breaches.<br>
+                    <strong>The Solution:</strong> ThreatIQ correlates raw security telemetry using a 15-minute sliding window (Union-Find), detects statistical anomalies with IsolationForest, computes an objective 7-factor risk score (0–100), retrieves MITRE ATT&CK & CVE intelligence via ChromaDB RAG, and produces 4-tier structured reasoning using Gemini LLM with automatic deterministic offline fallbacks.<br>
+                    <strong>Who it is for:</strong> Cybersecurity SOC teams, Tier-1/2 security analysts, and enterprise incident response units.
+                </p>
+                <div class="pitch-stats">
+                    <div class="pitch-stat-item">Reduction: <strong>36.5% Noise Cut</strong> (50 events → 2 critical incidents)</div>
+                    <div class="pitch-stat-item">Scoring: <strong>7-Factor Formula</strong> (0 to 100 deterministic)</div>
+                    <div class="pitch-stat-item">AI Reasoning: <strong>4-Tier Strict</strong> (Evidence, Intel, Hypothesis, Action)</div>
+                    <div class="pitch-stat-item">Offline Ready: <strong>100% Zero-Cloud Fallback</strong></div>
+                </div>
+            </div>
+
+            <!-- Key Features -->
+            <h2 class="sec-head">Core Features (What makes it special)</h2>
+            <div class="bullet-grid">
+                <div class="bullet-card">
+                    <strong>1. Fast ML Anomaly Detection</strong>
+                    <p>Scikit-Learn IsolationForest normalizes outlier deviations into a 0.0–1.0 anomaly score without requiring pre-labeled training sets.</p>
+                </div>
+                <div class="bullet-card">
+                    <strong>2. 15-Minute Sliding Window Correlation</strong>
+                    <p>Union-Find disjoint-set algorithm clusters related IP telemetry into coherent, multi-stage attack campaigns.</p>
+                </div>
+                <div class="bullet-card">
+                    <strong>3. 7-Factor Mathematical Risk Engine</strong>
+                    <p>Calculates an objective 0–100 score across Base Severity, Anomaly, Asset Criticality, Exploitability, Evidence, Recency, and Threat Intel.</p>
+                </div>
+                <div class="bullet-card">
+                    <strong>4. ChromaDB RAG Threat Intelligence</strong>
+                    <p>Embeds and retrieves matching MITRE ATT&CK techniques (T1078, T1548) and CVEs using Google Gemini embeddings.</p>
+                </div>
+                <div class="bullet-card">
+                    <strong>5. 4-Tier Multi-Provider LLM & Offline Fallback</strong>
+                    <p>Structured AI synthesis with instant rule-based fallback if the API key is missing or offline.</p>
+                </div>
+                <div class="bullet-card">
+                    <strong>6. 1-Click SOC Mitigation Actions</strong>
+                    <p>Analysts can immediately isolate hosts, block attacker IPs, or resolve incidents directly with SQLite audit logs.</p>
+                </div>
+            </div>
+
+            <!-- Tech Stack with "Why" -->
+            <h2 class="sec-head">Tech Stack & Why We Chose It</h2>
+            <table class="tech-table">
+                <thead>
+                    <tr>
+                        <th style="width: 140px;">Technology</th>
+                        <th style="width: 150px;">Role</th>
+                        <th>Why We Used This Specific Tech (Hackathon Decision)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>FastAPI</strong></td>
+                        <td>Backend REST API</td>
+                        <td>Asynchronous Python 3.11 for high telemetry throughput, instant OpenAPI/Swagger docs, and strict Pydantic validation.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Next.js 14 (App Router)</strong></td>
+                        <td>Frontend Web App</td>
+                        <td>React 18 SSR and server components for fast load times and clean component architecture.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>SWR</strong></td>
+                        <td>Client Data Layer</td>
+                        <td>Stale-while-revalidate client caching with 5-second automatic polling; zero flicker when analysts navigate or trigger actions.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>IsolationForest</strong></td>
+                        <td>ML Detection</td>
+                        <td>Unsupervised anomaly detection ideal for unlabeled security logs; finds zero-day anomalies fast.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>ChromaDB</strong></td>
+                        <td>Vector Database</td>
+                        <td>Lightweight, in-process vector store requiring zero external cloud subscriptions or network latency during demos.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Google Gemini</strong></td>
+                        <td>AI Provider (RAG & LLM)</td>
+                        <td>`models/gemini-embedding-001` for vector embeddings and `gemini-3.6-flash` for low-latency 4-tier reasoning.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>SQLite (WAL Mode)</strong></td>
+                        <td>Persistence</td>
+                        <td>7 clean tables in single zero-setup file (`threatiq.db`); 100% portable for judges without setting up Postgres.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Tailwind CSS</strong></td>
+                        <td>GoodBoard Design</td>
+                        <td>Implemented custom Obsidian (#0C0E12) and Electric Lime (#D8FA42) cyber tokens for a stunning SOC dark mode.</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- PURE HTML/CSS DIAGRAMS (NO MERMAID) -->
+            <h2 class="sec-head">Visual Architecture & Data Flow (Pure CSS Diagrams)</h2>
+
+            <!-- Diagram 1: High Level Architecture -->
+            <div class="css-diagram-card">
+                <div class="diagram-title">1. High-Level Architecture (Frontend → Backend → AI → Storage)</div>
+                <div class="diagram-urdu">
+                    <strong>Roman Urdu:</strong> User browser mein Next.js frontend open karta hai. Frontend ngrok ya direct network ke zariye FastAPI backend (:8000) se baat karta hai. Backend pipeline raw alerts ko filter karti hai, ChromaDB aur Gemini se threat context leti hai, aur sab kuch SQLite mein save karti hai.
+                </div>
+                <div class="arch-flow">
+                    <div class="arch-box client">
+                        <strong style="color: #3B82F6;">Next.js 14 Frontend</strong><br>
+                        Dashboard, SWR Hooks<br>
+                        <span class="mono" style="font-size:0.7rem; color:var(--text-muted);">Port 3000</span>
+                    </div>
+                    <div class="arch-arrow">→</div>
+                    <div class="arch-box backend">
+                        <strong style="color: var(--lime);">FastAPI Backend</strong><br>
+                        REST API & Pipeline Hub<br>
+                        <span class="mono" style="font-size:0.7rem; color:var(--text-muted);">Port 8000</span>
+                    </div>
+                    <div class="arch-arrow">→</div>
+                    <div class="arch-box ai">
+                        <strong style="color: var(--teal);">AI & Vector Core</strong><br>
+                        IsolationForest + ChromaDB<br>
+                        <span class="mono" style="font-size:0.7rem; color:var(--text-muted);">Gemini LLM</span>
+                    </div>
+                    <div class="arch-arrow">→</div>
+                    <div class="arch-box store">
+                        <strong style="color: #EAB308;">SQLite Storage</strong><br>
+                        threatiq.db<br>
+                        <span class="mono" style="font-size:0.7rem; color:var(--text-muted);">7 Tables (WAL)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Diagram 2: Main Telemetry Processing Flow -->
+            <div class="css-diagram-card">
+                <div class="diagram-title">2. Main Pipeline Flow (Telemetry Ingestion to Prioritized Alert)</div>
+                <div class="diagram-urdu">
+                    <strong>Roman Urdu:</strong> Raw telemetry aati hai → IsolationForest anomaly score calculate karta hai → 15-minute sliding window alerts ko group karti hai → 7-factor formula se score (0-100) nikalta hai → ChromaDB MITRE match dhoondta hai → Gemini 4-tier reasoning generate karta hai.
+                </div>
+                <div class="step-sequence">
+                    <div class="step-row">
+                        <span class="step-badge">STEP 1</span>
+                        <span><strong>Raw Log Ingestion:</strong> JSON/CSV telemetry file (e.g. 50 events) received at <code>/api/ingest/upload</code></span>
+                    </div>
+                    <div class="step-arrow-down">↓</div>
+                    <div class="step-row">
+                        <span class="step-badge">STEP 2</span>
+                        <span><strong>ML Anomaly Scoring:</strong> IsolationForest calculates deviation score (0.0 to 1.0) for each event</span>
+                    </div>
+                    <div class="step-arrow-down">↓</div>
+                    <div class="step-row">
+                        <span class="step-badge">STEP 3</span>
+                        <span><strong>Sliding-Window Correlation:</strong> Union-Find links related IP/time events into cohesive incident clusters</span>
+                    </div>
+                    <div class="step-arrow-down">↓</div>
+                    <div class="step-row">
+                        <span class="step-badge">STEP 4</span>
+                        <span><strong>7-Factor Composite Scoring:</strong> Computes 0–100 risk score (e.g. 91/100 Critical on <code>prod-db-01</code>)</span>
+                    </div>
+                    <div class="step-arrow-down">↓</div>
+                    <div class="step-row">
+                        <span class="step-badge">STEP 5</span>
+                        <span><strong>RAG Context Retrieval:</strong> ChromaDB retrieves matching MITRE ATT&CK tactics & CVE descriptions</span>
+                    </div>
+                    <div class="step-arrow-down">↓</div>
+                    <div class="step-row">
+                        <span class="step-badge">STEP 6</span>
+                        <span><strong>4-Tier LLM Reasoning:</strong> Gemini synthesizes Evidence, Context, Hypothesis & Mitigation Action</span>
+                    </div>
+                    <div class="step-arrow-down">↓</div>
+                    <div class="step-row">
+                        <span class="step-badge">STEP 7</span>
+                        <span><strong>Live SOC Dashboard:</strong> SWR auto-updates dashboard showing 36.5% alert reduction & 1-click remediation</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Diagram 3: Clean Top-Level Folder Structure -->
+            <div class="css-diagram-card">
+                <div class="diagram-title">3. High-Level Folder Tree (Mental Map)</div>
+                <div class="diagram-urdu">
+                    <strong>Roman Urdu:</strong> Project ka saara logic teen hisson mein hai: <code>backend/</code> (API, pipeline, ML, database), <code>frontend/</code> (Next.js pages, UI components, custom hooks), aur <code>scripts/</code> (reset aur seeding tools).
+                </div>
+                <div class="folder-tree">
+AI-RAG-Security-Threat-Prioritizer-Pro/
+├── <span style="color:var(--lime);">backend/</span>
+│   ├── <span style="color:var(--text-main);">main.py</span>              <span class="comment"># FastAPI application entrypoint</span>
+│   ├── <span style="color:var(--text-main);">pipeline.py</span>          <span class="comment"># Core orchestration hub</span>
+│   ├── <span style="color:var(--teal);">api/</span>                 <span class="comment"># REST endpoints: ingest, incidents, stats, rag, llm, demo</span>
+│   ├── <span style="color:var(--teal);">pipeline/</span>            <span class="comment"># correlation/, detection/, scoring/, mitigation/, reports/</span>
+│   ├── <span style="color:var(--teal);">rag/</span>                 <span class="comment"># retriever.py, vector_store.py, embeddings.py (ChromaDB)</span>
+│   ├── <span style="color:var(--teal);">llm/</span>                 <span class="comment"># reasoning.py, factory.py, providers.py, cache.py</span>
+│   ├── <span style="color:var(--teal);">database/</span>            <span class="comment"># connection.py, schema.sql (SQLite 7 tables)</span>
+│   └── <span style="color:var(--teal);">data/</span>                <span class="comment"># mitre_attack.json, cve_summaries.json, chroma_db/</span>
+├── <span style="color:var(--lime);">frontend/</span>
+│   ├── <span style="color:var(--teal);">app/</span>                 <span class="comment"># Next.js 14 App Router: page.tsx, incidents/, setup/, threats/</span>
+│   ├── <span style="color:var(--teal);">components/</span>          <span class="comment"># dashboard/, incident/, setup/, layout/</span>
+│   ├── <span style="color:var(--teal);">lib/</span>                 <span class="comment"># api.ts (Axios), hooks.ts (SWR), incident.ts, severity.ts</span>
+│   └── <span style="color:var(--teal);">tailwind.config.ts</span>   <span class="comment"># Obsidian & Electric Lime design tokens</span>
+├── <span style="color:var(--lime);">scripts/</span>                 <span class="comment"># seed_db.py, ingest_demo.py, benchmark.py</span>
+├── <span style="color:var(--lime);">reset.py</span>                 <span class="comment"># 1-click database reset for clean judge demos</span>
+└── <span style="color:var(--lime);">codebase-explainer-lite.html</span> <span class="comment"># This standalone hackathon explainer</span>
+                </div>
+            </div>
+
+            <!-- Demo Flow Walkthrough -->
+            <h2 class="sec-head">Demo Flow: What to Show the Judges (Step-by-Step)</h2>
+            <div class="demo-steps-list">
+                <div class="demo-step">
+                    <span class="demo-num">01</span>
+                    <div>
+                        <strong>Show the Dashboard First (Before State):</strong>
+                        <p style="font-size:0.85rem; color:var(--text-sub);">Point to the Top KPI banner. Explain that a typical SOC gets thousands of alerts per day. Show the clean GoodBoard Obsidian & Lime interface.</p>
+                    </div>
+                </div>
+                <div class="demo-step">
+                    <span class="demo-num">02</span>
+                    <div>
+                        <strong>Trigger Operation Shadow DB:</strong>
+                        <p style="font-size:0.85rem; color:var(--text-sub);">Click the demo trigger or run <code>python scripts/ingest_demo.py</code>. 50 raw telemetry events flood the system simulating an APT brute-force and database extraction.</p>
+                    </div>
+                </div>
+                <div class="demo-step">
+                    <span class="demo-num">03</span>
+                    <div>
+                        <strong>Highlight 36.5% Alert Reduction:</strong>
+                        <p style="font-size:0.85rem; color:var(--text-sub);">Show how the correlation engine compressed 50 noisy logs into only 2 high-priority incidents. Say: <em>"Instead of 50 popups, the analyst only looks at 2 actionable cards."</em></p>
+                    </div>
+                </div>
+                <div class="demo-step">
+                    <span class="demo-num">04</span>
+                    <div>
+                        <strong>Open Incident #1 (Score: 91 / Critical on <code>prod-db-01</code>):</strong>
+                        <p style="font-size:0.85rem; color:var(--text-sub);">Show the 7-Factor Score Breakdown card. Explain: <em>"We don't trust an LLM to invent a number. This 91 is mathematically proven from Anomaly + Asset + Exploitability."</em></p>
+                    </div>
+                </div>
+                <div class="demo-step">
+                    <span class="demo-num">05</span>
+                    <div>
+                        <strong>Show 4-Tier AI Reasoning (RAG in Action):</strong>
+                        <p style="font-size:0.85rem; color:var(--text-sub);">Display the AI Panel showing MITRE technique T1078 and CVE-2023-38606 retrieved from ChromaDB, synthesized by Gemini into concrete remediation steps.</p>
+                    </div>
+                </div>
+                <div class="demo-step">
+                    <span class="demo-num">06</span>
+                    <div>
+                        <strong>Execute 1-Click Analyst Remediation:</strong>
+                        <p style="font-size:0.85rem; color:var(--text-sub);">Click "Isolate Host" or "Block Attacker IP". The incident status changes immediately via SWR cache mutation and saves an audit log entry in SQLite.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Limitations & Future Roadmap -->
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:1rem; margin-bottom:2rem;">
+                <div style="background:var(--bg-surface); border:1px solid var(--border); border-radius:var(--radius-md); padding:1rem;">
+                    <strong style="color:var(--coral); font-size:0.95rem; display:block; margin-bottom:0.5rem;">Current Limitations</strong>
+                    <ul style="font-size:0.85rem; color:var(--text-sub); padding-left:1.2rem; line-height:1.6;">
+                        <li>SQLite database restricts heavy write-concurrency under millions of parallel logs.</li>
+                        <li>ChromaDB runs in-process on local disk; requires local storage persistence.</li>
+                        <li>Rule-based offline fallback is functional but lacks the nuanced phrasing of Gemini.</li>
+                    </ul>
+                </div>
+                <div style="background:var(--bg-surface); border:1px solid var(--border); border-radius:var(--radius-md); padding:1rem;">
+                    <strong style="color:var(--teal); font-size:0.95rem; display:block; margin-bottom:0.5rem;">Next Steps / Production Roadmap</strong>
+                    <ul style="font-size:0.85rem; color:var(--text-sub); padding-left:1.2rem; line-height:1.6;">
+                        <li>Decouple ingestion with Apache Kafka / RabbitMQ message queue.</li>
+                        <li>Migrate SQLite to distributed PostgreSQL / TimescaleDB with connection pooling.</li>
+                        <li>Integrate active SIEM connectors (Splunk, Elastic, CrowdStrike APIs).</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== PAGE 2: JUDGE QUESTIONS & ANSWERS ==================== -->
+        <section id="tab-qa" class="page-panel">
+            <div class="pitch-banner" style="border-left-color: var(--teal);">
+                <h1 class="pitch-title">Expected Judge Q&A — <span>18 Questions & Confident Answers</span></h1>
+                <p class="pitch-text">
+                    Judges aksar deep architecture, scalability, security, aur AI hallucinations ke baare mein sawal puchte hain. Neeche 18 practical sawal aur code-based answers hain, jin mein 4 tricky/tough questions bhi shamil hain jin par honest aur professional tareeqe se baat karni hai.
+                </p>
+            </div>
+
+            <div class="qa-filter-bar" id="qa-filter-chips">
+                <span class="qa-chip active" onclick="filterQA('ALL', this)">All Questions (18)</span>
+                <span class="qa-chip" onclick="filterQA('Architecture & Value', this)">Architecture</span>
+                <span class="qa-chip" onclick="filterQA('Detection & Scoring', this)">ML & Scoring</span>
+                <span class="qa-chip" onclick="filterQA('AI, RAG & LLM', this)">AI & RAG</span>
+                <span class="qa-chip" onclick="filterQA('Security & Privacy', this)">Security</span>
+                <span class="qa-chip" onclick="filterQA('Tough Question', this)">🔥 Tough / Tricky (4)</span>
+            </div>
+
+            <div id="qa-container">
+
+                <div class="qa-card " data-cat="Architecture & Value">
+                    <div class="qa-cat">
+                        <span>Architecture & Value</span>
+                        
+                    </div>
+                    <div class="qa-q">What exact problem does ThreatIQ solve, and for whom?</div>
+                    <div class="qa-a"><strong>Confident Answer:</strong> SOC (Security Operations Center) analysts hazaron repetitive alerts aur false alarms se overwhelmed hote hain ('Alert Fatigue'). ThreatIQ un raw security logs ko ingest karke ML anomaly detection, 15-minute sliding window correlation, 7-factor composite scoring, aur ChromaDB RAG reasoning se filter karta hai — 36.5% alert noise reduce karke sirf asli critical threats highlight karta hai.</div>
+                </div>
+
+                <div class="qa-card " data-cat="Architecture & Value">
+                    <div class="qa-cat">
+                        <span>Architecture & Value</span>
+                        
+                    </div>
+                    <div class="qa-q">How does your correlation engine work behind the scenes?</div>
+                    <div class="qa-a"><strong>Confident Answer:</strong> Correlation engine (`backend/pipeline/correlation/engine.py`) ek 15-minute sliding window use karta hai. Same source IP ya common target asset ke related events ko Union-Find (Disjoint Set) algorithm ke zariye aapas mein group karta hai. Is tarah 50 scattered alerts 2 meaningful incident clusters mein tabdeel ho jate hain.</div>
+                </div>
+
+                <div class="qa-card " data-cat="Detection & Scoring">
+                    <div class="qa-cat">
+                        <span>Detection & Scoring</span>
+                        
+                    </div>
+                    <div class="qa-q">Why did you use a 7-factor scoring formula instead of letting an LLM pick the score?</div>
+                    <div class="qa-a"><strong>Confident Answer:</strong> LLMs numeric scoring mein inconsistent aur hallucinate karte hain. Hamne 7 strictly defined mathematical factors banaye: Base Severity (20), Anomaly (20), Asset Criticality (20), Exploitability (15), Evidence Density (10), Recency (10), aur Threat Intel (5). Yeh 0–100 score 100% deterministic, explainable, aur instant hota hai.</div>
+                </div>
+
+                <div class="qa-card " data-cat="AI, RAG & LLM">
+                    <div class="qa-cat">
+                        <span>AI, RAG & LLM</span>
+                        
+                    </div>
+                    <div class="qa-q">How exactly is RAG implemented here, and what is stored in the vector database?</div>
+                    <div class="qa-a"><strong>Confident Answer:</strong> ChromaDB vector store (`backend/rag/`) mein 2 curated collections hain: `mitre_attack` (12 techniques) aur `cve_summaries` (11 CVEs). Jab incident cluster banta hai, to uske event keywords aur tactics ko Google Gemini embeddings (`models/gemini-embedding-001`) ke zariye cosine similarity search se match karke relevant context nikala jata hai.</div>
+                </div>
+
+                <div class="qa-card " data-cat="AI, RAG & LLM">
+                    <div class="qa-cat">
+                        <span>AI, RAG & LLM</span>
+                        
+                    </div>
+                    <div class="qa-q">What is the 4-tier LLM reasoning output structure?</div>
+                    <div class="qa-a"><strong>Confident Answer:</strong> Gemini model (`gemini-3.6-flash`) se unstructured summary lene ke bajaye strict 4 tiers generate karwaye jate hain: (1) Observed Evidence (raw facts), (2) Retrieved Context (matching MITRE/CVE intel), (3) AI Interpretation (hypothesized attack path), aur (4) Recommended Action (concrete remediation playbook).</div>
+                </div>
+
+                <div class="qa-card " data-cat="AI, RAG & LLM">
+                    <div class="qa-cat">
+                        <span>AI, RAG & LLM</span>
+                        
+                    </div>
+                    <div class="qa-q">What happens if the LLM provider fails, API key is missing, or the internet drops?</div>
+                    <div class="qa-a"><strong>Confident Answer:</strong> Pipeline fail nahi hoti! Hamne `backend/llm/reasoning.py` mein deterministic rule-based fallback engine likha hai jo extracted events aur RAG matches ko parse karke instant 4-tier structured reasoning aur remediation steps offline generate kar deta hai.</div>
+                </div>
+
+                <div class="qa-card " data-cat="Detection & Scoring">
+                    <div class="qa-cat">
+                        <span>Detection & Scoring</span>
+                        
+                    </div>
+                    <div class="qa-q">Why did you choose IsolationForest for anomaly detection?</div>
+                    <div class="qa-a"><strong>Confident Answer:</strong> Security telemetry unlabeled hoti hai (pehle se labeled attack dataset available nahi hota). Scikit-Learn ka IsolationForest unsupervised tree partitioning use karta hai jo abnormal spikes aur zero-day behavior ko rapidly isolate karta hai. Iske outputs ko 0.0–1.0 score mein normalize kiya jata hai.</div>
+                </div>
+
+                <div class="qa-card " data-cat="Frontend & UX">
+                    <div class="qa-cat">
+                        <span>Frontend & UX</span>
+                        
+                    </div>
+                    <div class="qa-q">Why Next.js 14 and SWR on frontend instead of plain React with useEffect?</div>
+                    <div class="qa-a"><strong>Confident Answer:</strong> SWR (`frontend/lib/hooks.ts`) automatic stale-while-revalidate client caching aur 5000ms background polling provide karta hai. Jab analyst incident explore karta hai ya decision action leta hai to instant UI update hoti hai without any layout flicker ya loading spinner delay.</div>
+                </div>
+
+                <div class="qa-card " data-cat="Tech Stack">
+                    <div class="qa-cat">
+                        <span>Tech Stack</span>
+                        
+                    </div>
+                    <div class="qa-q">Why FastAPI for backend instead of Flask or Django?</div>
+                    <div class="qa-a"><strong>Confident Answer:</strong> FastAPI modern Python 3.11 asynchronous ASGI framework hai jo high-throughput telemetry ingestion ke liye optimized hai. Saath hi Pydantic models automatically request validation aur OpenAPI Swagger documentation guarantee karte hain.</div>
+                </div>
+
+                <div class="qa-card " data-cat="Security & Privacy">
+                    <div class="qa-cat">
+                        <span>Security & Privacy</span>
+                        
+                    </div>
+                    <div class="qa-q">How does ThreatIQ handle customer data privacy when using cloud LLMs?</div>
+                    <div class="qa-a"><strong>Confident Answer:</strong> Raw sensitive payloads ko backend par preprocess aur sanitize kiya jata hai; sirf anonymized attack telemetry aur abstracted tactics LLM prompt mein jati hain. Mazeed yeh ke platform local Ollama provider ko bhi support karta hai jo 100% on-premises offline chal sakta hai.</div>
+                </div>
+
+                <div class="qa-card " data-cat="Performance">
+                    <div class="qa-cat">
+                        <span>Performance</span>
+                        
+                    </div>
+                    <div class="qa-q">What is the end-to-end latency of the analysis pipeline?</div>
+                    <div class="qa-a"><strong>Confident Answer:</strong> ML anomaly detection, correlation, aur 7-factor scoring sub-second (under 150ms) mein complete ho jate hain. Gemini LLM reasoning ke sath total time 1.5–2.5s hota hai, aur in-memory LLM cache match hone par < 50ms mein return karta hai.</div>
+                </div>
+
+                <div class="qa-card " data-cat="SOC Workflow">
+                    <div class="qa-cat">
+                        <span>SOC Workflow</span>
+                        
+                    </div>
+                    <div class="qa-q">Can an analyst take immediate remediation action from the interface?</div>
+                    <div class="qa-a"><strong>Confident Answer:</strong> Bilkul. Incident detail modal par dedicated Action Panel hai jahan se analyst 1-click decision le sakta hai: Acknowledge, Isolate Host, Block IP, ya Resolve. Har action SQLite ke `analyst_actions` audit log mein save hoti hai aur status instantly sync hota hai.</div>
+                </div>
+
+                <div class="qa-card " data-cat="Demo Scenario">
+                    <div class="qa-cat">
+                        <span>Demo Scenario</span>
+                        
+                    </div>
+                    <div class="qa-q">What is 'Operation Shadow DB' that you showcase in the demo?</div>
+                    <div class="qa-a"><strong>Confident Answer:</strong> Yeh realistic multi-stage cyber attack scenario hai jo `prod-db-01` par simulate hota hai: SSH brute-force login (T1078) -> Privilege escalation via sudo (T1548) -> Database dumping (CVE-2023-38606) -> Encrypted exfiltration. ThreatIQ ise correlate karke 91/100 critical incident declare karta hai.</div>
+                </div>
+
+                <div class="qa-card " data-cat="Scalability">
+                    <div class="qa-cat">
+                        <span>Scalability</span>
+                        
+                    </div>
+                    <div class="qa-q">How would you scale this architecture to millions of logs per day?</div>
+                    <div class="qa-a"><strong>Confident Answer:</strong> Current modular architecture production-ready abstractions par bani hai: (1) Ingestion endpoint ke samne Apache Kafka ya RabbitMQ message queue lagayein, (2) Celery/Redis distributed workers par pipeline parallelize karein, aur (3) SQLite ko PostgreSQL/TimescaleDB se swap karein.</div>
+                </div>
+
+                <div class="qa-card tough" data-cat="Tough Question">
+                    <div class="qa-cat">
+                        <span>Tough Question</span>
+                        <span class="tough-badge">TRICKY QUESTION</span>
+                    </div>
+                    <div class="qa-q">Tricky: Why did you use SQLite instead of PostgreSQL or MongoDB?</div>
+                    <div class="qa-a"><strong>Confident Answer:</strong> Honest answer: Hackathon context mein zero-configuration portability aur rapid local judge evaluation zaroori thi taake koi database server setup na karna pare. However, database layer (`backend/database/connection.py`) fully decoupled hai aur production mein easily PostgreSQL se swap ho sakti hai.</div>
+                </div>
+
+                <div class="qa-card tough" data-cat="Tough Question">
+                    <div class="qa-cat">
+                        <span>Tough Question</span>
+                        <span class="tough-badge">TRICKY QUESTION</span>
+                    </div>
+                    <div class="qa-q">Tricky: What if the LLM hallucinates an attack that never happened?</div>
+                    <div class="qa-a"><strong>Confident Answer:</strong> Hamne 3 strict guardrails lagaye hain: (1) Temperature 0.2 par freeze hai, (2) System prompt model ko strictly Tier 1 Evidence aur Tier 2 RAG context tak limit karta hai, aur (3) Har LLM explanation ke saath raw event logs aur mathematical score breakdown side-by-side verification ke liye available hoti hain.</div>
+                </div>
+
+                <div class="qa-card tough" data-cat="Tough Question">
+                    <div class="qa-cat">
+                        <span>Tough Question</span>
+                        <span class="tough-badge">TRICKY QUESTION</span>
+                    </div>
+                    <div class="qa-q">Tricky: Isn't 36.5% alert reduction lower than tools claiming 90%?</div>
+                    <div class="qa-a"><strong>Confident Answer:</strong> Honest answer: Commercial tools jo 90% claim karti hain aksar high-volume repetitive firewall pings drop karti hain jisse critical alerts miss ho sakte hain. Hamara 36.5% reduction ek highly curated 50-event targeted attack dataset par hai jahan zero false negatives ensure kiye gaye hain.</div>
+                </div>
+
+                <div class="qa-card tough" data-cat="Tough Question">
+                    <div class="qa-cat">
+                        <span>Tough Question</span>
+                        <span class="tough-badge">TRICKY QUESTION</span>
+                    </div>
+                    <div class="qa-q">Tricky: Why is ChromaDB stored on local disk instead of Pinecone cloud?</div>
+                    <div class="qa-a"><strong>Confident Answer:</strong> Local ChromaDB use karne se network latency khatam hoti hai, offline demo bina internet ke 100% reliable chalta hai, aur third-party cloud vector billing ka kharcha zero ho jata hai.</div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ==================== PAGE 3: COMPACT FILE TILES ==================== -->
+        <section id="tab-tiles" class="page-panel">
+            <div class="pitch-banner" style="border-left-color: var(--lime);">
+                <h1 class="pitch-title">Compact File Tiles — <span>Complete Project Inventory</span></h1>
+                <p class="pitch-text">
+                    Codebase ki tamaam core files aur bundled modules ki concise list. Har tile par file ka naam, badge, aur 1-line Roman Urdu purpose hai. Click karne par 4-line exact summary aur connections pop-over mein open hoti hain.
+                </p>
+            </div>
+
+            <input type="text" id="tile-search" class="tiles-search-input" placeholder="Search by file name, keyword, or module (e.g. anomaly, hooks, pipeline, chroma)..." oninput="filterTiles()">
+
+            <div class="tiles-grid" id="tiles-grid-el">
+
+                <div class="tile-card" onclick='openTileModal({&quot;name&quot;: &quot;main.py&quot;, &quot;path&quot;: &quot;backend/main.py&quot;, &quot;category&quot;: &quot;Backend Core&quot;, &quot;badge&quot;: &quot;Entrypoint&quot;, &quot;color&quot;: &quot;#3B82F6&quot;, &quot;one_liner&quot;: &quot;FastAPI application entrypoint, CORS configuration, and router registrations.&quot;, &quot;what_it_does&quot;: &quot;Poori backend application ka central starting point hai. Yeh FastAPI app create karta hai, CORS middleware configure karta hai, aur saare REST API routers (`/api/ingest`, `/api/incidents`, `/api/stats`, `/api/rag`, `/api/llm`) ko mount karta hai.&quot;, &quot;why_matters&quot;: &quot;Iske baghair backend server start nahi ho sakta aur koi bhi API endpoint accessible nahi hota.&quot;, &quot;connections&quot;: &quot;Mounts backend/api/*.py routers, initializes SQLite database.&quot;})' data-search="main.py backend core fastapi application entrypoint, cors configuration, and router registrations.">
+                    <div class="tile-head">
+                        <span class="tile-name">main.py</span>
+                        <span class="tile-badge" style="background:#3B82F622; color:#3B82F6; border:1px solid #3B82F644;">Entrypoint</span>
+                    </div>
+                    <div class="tile-sub">FastAPI application entrypoint, CORS configuration, and router registrations.</div>
+                </div>
+
+                <div class="tile-card" onclick='openTileModal({&quot;name&quot;: &quot;pipeline.py&quot;, &quot;path&quot;: &quot;backend/pipeline.py&quot;, &quot;category&quot;: &quot;Backend Core&quot;, &quot;badge&quot;: &quot;Pipeline Hub&quot;, &quot;color&quot;: &quot;#10B981&quot;, &quot;one_liner&quot;: &quot;ThreatIQ orchestration pipeline coordinating detection, clustering, scoring, and AI.&quot;, &quot;what_it_does&quot;: &quot;Raw security event aane se lekar incident banne tak ke 5 steps ko coordinate karta hai: (1) ML anomaly detection, (2) Sliding window correlation, (3) 7-factor composite scoring, (4) ChromaDB RAG retrieval, aur (5) LLM reasoning generation.&quot;, &quot;why_matters&quot;: &quot;Platform ka core processing brain hai; saari algorithms iske zariye ek coordinated workflow mein chalti hain.&quot;, &quot;connections&quot;: &quot;Calls detection/anomaly.py, correlation/engine.py, scoring/engine.py, rag/retriever.py, llm/reasoning.py.&quot;})' data-search="pipeline.py backend core threatiq orchestration pipeline coordinating detection, clustering, scoring, and ai.">
+                    <div class="tile-head">
+                        <span class="tile-name">pipeline.py</span>
+                        <span class="tile-badge" style="background:#10B98122; color:#10B981; border:1px solid #10B98144;">Pipeline Hub</span>
+                    </div>
+                    <div class="tile-sub">ThreatIQ orchestration pipeline coordinating detection, clustering, scoring, and AI.</div>
+                </div>
+
+                <div class="tile-card" onclick='openTileModal({&quot;name&quot;: &quot;api/ingest.py&quot;, &quot;path&quot;: &quot;backend/api/ingest.py&quot;, &quot;category&quot;: &quot;Backend API&quot;, &quot;badge&quot;: &quot;Ingestion&quot;, &quot;color&quot;: &quot;#3B82F6&quot;, &quot;one_liner&quot;: &quot;Batch event ingestion and multipart CSV/JSON log file upload endpoints.&quot;, &quot;what_it_does&quot;: &quot;POST /api/ingest/events aur POST /api/ingest/upload handle karta hai. Raw JSON payload ya CSV file ko validate karta hai aur pipeline orchestrator ko pass karta hai.&quot;, &quot;why_matters&quot;: &quot;External telemetry data ko backend system ke andar lane ka official gateway hai.&quot;, &quot;connections&quot;: &quot;Receives data from frontend/lib/setup.ts -> triggers backend/pipeline.py.&quot;})' data-search="api/ingest.py backend api batch event ingestion and multipart csv/json log file upload endpoints.">
+                    <div class="tile-head">
+                        <span class="tile-name">api/ingest.py</span>
+                        <span class="tile-badge" style="background:#3B82F622; color:#3B82F6; border:1px solid #3B82F644;">Ingestion</span>
+                    </div>
+                    <div class="tile-sub">Batch event ingestion and multipart CSV/JSON log file upload endpoints.</div>
+                </div>
+
+                <div class="tile-card" onclick='openTileModal({&quot;name&quot;: &quot;api/incidents.py&quot;, &quot;path&quot;: &quot;backend/api/incidents.py&quot;, &quot;category&quot;: &quot;Backend API&quot;, &quot;badge&quot;: &quot;Incidents API&quot;, &quot;color&quot;: &quot;#3B82F6&quot;, &quot;one_liner&quot;: &quot;Incident listing, detail inspection, analyst actions, and report exports.&quot;, &quot;what_it_does&quot;: &quot;GET /api/incidents, GET /api/incidents/{id}, POST /api/incidents/{id}/action, aur executive report download handle karta hai. Score breakdown aur LLM reasoning return karta hai.&quot;, &quot;why_matters&quot;: &quot;SOC analysts ke interface ko incidents ka data aur decision execution powers provide karta hai.&quot;, &quot;connections&quot;: &quot;Reads database/models/incident.py -> sends data to frontend/lib/incident.ts.&quot;})' data-search="api/incidents.py backend api incident listing, detail inspection, analyst actions, and report exports.">
+                    <div class="tile-head">
+                        <span class="tile-name">api/incidents.py</span>
+                        <span class="tile-badge" style="background:#3B82F622; color:#3B82F6; border:1px solid #3B82F644;">Incidents API</span>
+                    </div>
+                    <div class="tile-sub">Incident listing, detail inspection, analyst actions, and report exports.</div>
+                </div>
+
+                <div class="tile-card" onclick='openTileModal({&quot;name&quot;: &quot;api/stats.py&quot;, &quot;path&quot;: &quot;backend/api/stats.py&quot;, &quot;category&quot;: &quot;Backend API&quot;, &quot;badge&quot;: &quot;Stats API&quot;, &quot;color&quot;: &quot;#3B82F6&quot;, &quot;one_liner&quot;: &quot;Dashboard KPI summary statistics and alert noise reduction calculation.&quot;, &quot;what_it_does&quot;: &quot;GET /api/stats endpoint serve karta hai jo total events, total incidents, alert reduction percentage (e.g. 36.5%), aur severity distribution (critical, high, medium, low) calculate karta hai.&quot;, &quot;why_matters&quot;: &quot;Dashboard ka top KPI banner isi endpoint par depend karta hai jo SWR har 5s baad poll karta hai.&quot;, &quot;connections&quot;: &quot;Queried by frontend/lib/hooks.ts (useDashboardStats).&quot;})' data-search="api/stats.py backend api dashboard kpi summary statistics and alert noise reduction calculation.">
+                    <div class="tile-head">
+                        <span class="tile-name">api/stats.py</span>
+                        <span class="tile-badge" style="background:#3B82F622; color:#3B82F6; border:1px solid #3B82F644;">Stats API</span>
+                    </div>
+                    <div class="tile-sub">Dashboard KPI summary statistics and alert noise reduction calculation.</div>
+                </div>
+
+                <div class="tile-card" onclick='openTileModal({&quot;name&quot;: &quot;api/demo.py&quot;, &quot;path&quot;: &quot;backend/api/demo.py&quot;, &quot;category&quot;: &quot;Backend API&quot;, &quot;badge&quot;: &quot;Demo Control&quot;, &quot;color&quot;: &quot;#F59E0B&quot;, &quot;one_liner&quot;: &quot;Endpoints to trigger the Operation Shadow DB scenario and reset clean baseline.&quot;, &quot;what_it_does&quot;: &quot;POST /api/demo/run (ingests 50 demo events) aur POST /api/demo/reset (re-seeds fresh database) provide karta hai for predictable live judge presentations.&quot;, &quot;why_matters&quot;: &quot;Hackathon demo ke waqt bina kisi manual setup ke 1-click se scenario execute karne ke liye zaroori hai.&quot;, &quot;connections&quot;: &quot;Reads backend/demo_data/events.json -> runs pipeline.py.&quot;})' data-search="api/demo.py backend api endpoints to trigger the operation shadow db scenario and reset clean baseline.">
+                    <div class="tile-head">
+                        <span class="tile-name">api/demo.py</span>
+                        <span class="tile-badge" style="background:#F59E0B22; color:#F59E0B; border:1px solid #F59E0B44;">Demo Control</span>
+                    </div>
+                    <div class="tile-sub">Endpoints to trigger the Operation Shadow DB scenario and reset clean baseline.</div>
+                </div>
+
+                <div class="tile-card" onclick='openTileModal({&quot;name&quot;: &quot;detection/anomaly.py&quot;, &quot;path&quot;: &quot;backend/pipeline/detection/anomaly.py&quot;, &quot;category&quot;: &quot;ML Detection&quot;, &quot;badge&quot;: &quot;IsolationForest&quot;, &quot;color&quot;: &quot;#8B5CF6&quot;, &quot;one_liner&quot;: &quot;Scikit-Learn IsolationForest model normalizing event anomalies to 0.0-1.0.&quot;, &quot;what_it_does&quot;: &quot;Event features (time deltas, frequency, port anomalies) ko analyze karta hai aur har event ko 0.0 se 1.0 ke darmiyan anomaly score assign karta hai.&quot;, &quot;why_matters&quot;: &quot;Abnormal security events ko normal background traffic se mathematically alag karta hai.&quot;, &quot;connections&quot;: &quot;Used by backend/pipeline.py -> inputs to scoring/engine.py.&quot;})' data-search="detection/anomaly.py ml detection scikit-learn isolationforest model normalizing event anomalies to 0.0-1.0.">
+                    <div class="tile-head">
+                        <span class="tile-name">detection/anomaly.py</span>
+                        <span class="tile-badge" style="background:#8B5CF622; color:#8B5CF6; border:1px solid #8B5CF644;">IsolationForest</span>
+                    </div>
+                    <div class="tile-sub">Scikit-Learn IsolationForest model normalizing event anomalies to 0.0-1.0.</div>
+                </div>
+
+                <div class="tile-card" onclick='openTileModal({&quot;name&quot;: &quot;correlation/engine.py&quot;, &quot;path&quot;: &quot;backend/pipeline/correlation/engine.py&quot;, &quot;category&quot;: &quot;Correlation&quot;, &quot;badge&quot;: &quot;Clustering&quot;, &quot;color&quot;: &quot;#8B5CF6&quot;, &quot;one_liner&quot;: &quot;Event clustering engine using 15-minute sliding windows and Union-Find graph.&quot;, &quot;what_it_does&quot;: &quot;Isolated alerts ko source IP aur time proximity ki bunyaad par aapas mein connect karta hai aur ek combined incident banata hai.&quot;, &quot;why_matters&quot;: &quot;Alert fatigue ko reduce karta hai; 50 isolated alerts ko 2 meaningful incidents mein compress karta hai.&quot;, &quot;connections&quot;: &quot;Uses disjoint_set.py and sliding_window.py -> outputs to scoring/engine.py.&quot;})' data-search="correlation/engine.py correlation event clustering engine using 15-minute sliding windows and union-find graph.">
+                    <div class="tile-head">
+                        <span class="tile-name">correlation/engine.py</span>
+                        <span class="tile-badge" style="background:#8B5CF622; color:#8B5CF6; border:1px solid #8B5CF644;">Clustering</span>
+                    </div>
+                    <div class="tile-sub">Event clustering engine using 15-minute sliding windows and Union-Find graph.</div>
+                </div>
+
+                <div class="tile-card" onclick='openTileModal({&quot;name&quot;: &quot;scoring/engine.py&quot;, &quot;path&quot;: &quot;backend/pipeline/scoring/engine.py&quot;, &quot;category&quot;: &quot;Scoring Engine&quot;, &quot;badge&quot;: &quot;7-Factor Engine&quot;, &quot;color&quot;: &quot;#EC4899&quot;, &quot;one_liner&quot;: &quot;7-factor composite scoring engine calculating deterministic 0-100 risk scores.&quot;, &quot;what_it_does&quot;: &quot;Base Severity (20), Anomaly (20), Asset Criticality (20), Exploitability (15), Evidence (10), Recency (10), aur Threat Intel (5) ko calculate karke composite score banata hai.&quot;, &quot;why_matters&quot;: &quot;Incidents ki priority objectively tay karta hai (>=80 Critical, >=60 High, etc.).&quot;, &quot;connections&quot;: &quot;Saves to database/models/score_factors.py -> mirrored in frontend/lib/severity.ts.&quot;})' data-search="scoring/engine.py scoring engine 7-factor composite scoring engine calculating deterministic 0-100 risk scores.">
+                    <div class="tile-head">
+                        <span class="tile-name">scoring/engine.py</span>
+                        <span class="tile-badge" style="background:#EC489922; color:#EC4899; border:1px solid #EC489944;">7-Factor Engine</span>
+                    </div>
+                    <div class="tile-sub">7-factor composite scoring engine calculating deterministic 0-100 risk scores.</div>
+                </div>
+
+                <div class="tile-card" onclick='openTileModal({&quot;name&quot;: &quot;rag/retriever.py&quot;, &quot;path&quot;: &quot;backend/rag/retriever.py&quot;, &quot;category&quot;: &quot;RAG Engine&quot;, &quot;badge&quot;: &quot;Vector Retriever&quot;, &quot;color&quot;: &quot;#06B6D4&quot;, &quot;one_liner&quot;: &quot;ChromaDB vector retriever matching MITRE ATT&CK techniques and CVEs.&quot;, &quot;what_it_does&quot;: &quot;Incident data ko vector store mein query karke relevant MITRE tactics (e.g. T1078 Valid Accounts) aur CVE vulnerability summaries retrieve karta hai.&quot;, &quot;why_matters&quot;: &quot;LLM ko hallucination se bachata hai aur industry standard security intelligence context deta hai.&quot;, &quot;connections&quot;: &quot;Calls rag/vector_store.py -> feeds context into llm/reasoning.py.&quot;})' data-search="rag/retriever.py rag engine chromadb vector retriever matching mitre att&ck techniques and cves.">
+                    <div class="tile-head">
+                        <span class="tile-name">rag/retriever.py</span>
+                        <span class="tile-badge" style="background:#06B6D422; color:#06B6D4; border:1px solid #06B6D444;">Vector Retriever</span>
+                    </div>
+                    <div class="tile-sub">ChromaDB vector retriever matching MITRE ATT&CK techniques and CVEs.</div>
+                </div>
+
+                <div class="tile-card" onclick='openTileModal({&quot;name&quot;: &quot;llm/reasoning.py&quot;, &quot;path&quot;: &quot;backend/llm/reasoning.py&quot;, &quot;category&quot;: &quot;LLM Reasoning&quot;, &quot;badge&quot;: &quot;4-Tier Synthesis&quot;, &quot;color&quot;: &quot;#06B6D4&quot;, &quot;one_liner&quot;: &quot;Synthesizes raw evidence and RAG context into 4-tier structured explanations.&quot;, &quot;what_it_does&quot;: &quot;Multi-provider LLM (Gemini) ko prompt karta hai aur 4 tiers (Evidence, Context, Hypothesis, Action) return karta hai; offline fallback generator bhi maintain karta hai.&quot;, &quot;why_matters&quot;: &quot;Junior analysts ko experienced SOC investigator jaisi explainability aur actionable steps deta hai.&quot;, &quot;connections&quot;: &quot;Uses llm/factory.py and llm/cache.py -> saves to database/models/llm_explanation.py.&quot;})' data-search="llm/reasoning.py llm reasoning synthesizes raw evidence and rag context into 4-tier structured explanations.">
+                    <div class="tile-head">
+                        <span class="tile-name">llm/reasoning.py</span>
+                        <span class="tile-badge" style="background:#06B6D422; color:#06B6D4; border:1px solid #06B6D444;">4-Tier Synthesis</span>
+                    </div>
+                    <div class="tile-sub">Synthesizes raw evidence and RAG context into 4-tier structured explanations.</div>
+                </div>
+
+                <div class="tile-card" onclick='openTileModal({&quot;name&quot;: &quot;llm/factory.py&quot;, &quot;path&quot;: &quot;backend/llm/factory.py&quot;, &quot;category&quot;: &quot;LLM Reasoning&quot;, &quot;badge&quot;: &quot;Multi-Provider&quot;, &quot;color&quot;: &quot;#06B6D4&quot;, &quot;one_liner&quot;: &quot;Factory dynamically initializing Gemini, OpenAI, Claude, Groq, or Ollama.&quot;, &quot;what_it_does&quot;: &quot;Environment variables ya settings ke mutabiq desired AI provider ka client initialize karta hai without touching pipeline logic.&quot;, &quot;why_matters&quot;: &quot;Vendor lock-in se bachata hai; developer easily Google Gemini se OpenAI ya local Ollama par switch kar sakta hai.&quot;, &quot;connections&quot;: &quot;Imports providers from backend/llm/providers.py.&quot;})' data-search="llm/factory.py llm reasoning factory dynamically initializing gemini, openai, claude, groq, or ollama.">
+                    <div class="tile-head">
+                        <span class="tile-name">llm/factory.py</span>
+                        <span class="tile-badge" style="background:#06B6D422; color:#06B6D4; border:1px solid #06B6D444;">Multi-Provider</span>
+                    </div>
+                    <div class="tile-sub">Factory dynamically initializing Gemini, OpenAI, Claude, Groq, or Ollama.</div>
+                </div>
+
+                <div class="tile-card" onclick='openTileModal({&quot;name&quot;: &quot;database/connection.py&quot;, &quot;path&quot;: &quot;backend/database/connection.py&quot;, &quot;category&quot;: &quot;Database Layer&quot;, &quot;badge&quot;: &quot;SQLite Driver&quot;, &quot;color&quot;: &quot;#EAB308&quot;, &quot;one_liner&quot;: &quot;Thread-safe SQLite connection manager with WAL mode and schema bootstrap.&quot;, &quot;what_it_does&quot;: &quot;SQLite database (`threatiq.db`) ka connection pool manage karta hai, WAL (Write-Ahead Logging) mode enable karta hai, aur startup par schema bootstrap karta hai.&quot;, &quot;why_matters&quot;: &quot;Poore platform ka single source of persistent data store hai.&quot;, &quot;connections&quot;: &quot;Executes database/schema.sql -> consumed by all models and repositories.&quot;})' data-search="database/connection.py database layer thread-safe sqlite connection manager with wal mode and schema bootstrap.">
+                    <div class="tile-head">
+                        <span class="tile-name">database/connection.py</span>
+                        <span class="tile-badge" style="background:#EAB30822; color:#EAB308; border:1px solid #EAB30844;">SQLite Driver</span>
+                    </div>
+                    <div class="tile-sub">Thread-safe SQLite connection manager with WAL mode and schema bootstrap.</div>
+                </div>
+
+                <div class="tile-card" onclick='openTileModal({&quot;name&quot;: &quot;database/schema.sql&quot;, &quot;path&quot;: &quot;backend/database/schema.sql&quot;, &quot;category&quot;: &quot;Database Layer&quot;, &quot;badge&quot;: &quot;SQL DDL&quot;, &quot;color&quot;: &quot;#EAB308&quot;, &quot;one_liner&quot;: &quot;DDL schema defining the 7 relational tables and query performance indexes.&quot;, &quot;what_it_does&quot;: &quot;7 tables banata hai: `incidents`, `events`, `score_factors`, `llm_explanations`, `rag_results`, `analyst_actions`, aur `pipeline_settings`.&quot;, &quot;why_matters&quot;: &quot;Data integrity, foreign keys, aur timestamps enforce karta hai.&quot;, &quot;connections&quot;: &quot;Loaded by database/connection.py.&quot;})' data-search="database/schema.sql database layer ddl schema defining the 7 relational tables and query performance indexes.">
+                    <div class="tile-head">
+                        <span class="tile-name">database/schema.sql</span>
+                        <span class="tile-badge" style="background:#EAB30822; color:#EAB308; border:1px solid #EAB30844;">SQL DDL</span>
+                    </div>
+                    <div class="tile-sub">DDL schema defining the 7 relational tables and query performance indexes.</div>
+                </div>
+
+                <div class="tile-card" onclick='openTileModal({&quot;name&quot;: &quot;app/page.tsx&quot;, &quot;path&quot;: &quot;frontend/app/page.tsx&quot;, &quot;category&quot;: &quot;Frontend UI&quot;, &quot;badge&quot;: &quot;Dashboard Page&quot;, &quot;color&quot;: &quot;#14B8A6&quot;, &quot;one_liner&quot;: &quot;Main executive SOC dashboard with KPI banner, incident list, and filter tabs.&quot;, &quot;what_it_does&quot;: &quot;ThreatIQ ka primary dashboard render karta hai. Live metrics (total events, reduction %, critical incidents), active incident cards, aur severity filters display karta hai.&quot;, &quot;why_matters&quot;: &quot;Analyst ka primary workspace hai jahan se saray threats monitor hote hain.&quot;, &quot;connections&quot;: &quot;Uses lib/hooks.ts -> renders components/dashboard/stats-banner.tsx & incident-list.tsx.&quot;})' data-search="app/page.tsx frontend ui main executive soc dashboard with kpi banner, incident list, and filter tabs.">
+                    <div class="tile-head">
+                        <span class="tile-name">app/page.tsx</span>
+                        <span class="tile-badge" style="background:#14B8A622; color:#14B8A6; border:1px solid #14B8A644;">Dashboard Page</span>
+                    </div>
+                    <div class="tile-sub">Main executive SOC dashboard with KPI banner, incident list, and filter tabs.</div>
+                </div>
+
+                <div class="tile-card" onclick='openTileModal({&quot;name&quot;: &quot;app/incidents/[id]/page.tsx&quot;, &quot;path&quot;: &quot;frontend/app/incidents/[id]/page.tsx&quot;, &quot;category&quot;: &quot;Frontend UI&quot;, &quot;badge&quot;: &quot;Detail Route&quot;, &quot;color&quot;: &quot;#14B8A6&quot;, &quot;one_liner&quot;: &quot;Deep incident inspection page with score breakdown, LLM reasoning, and actions.&quot;, &quot;what_it_does&quot;: &quot;Specific incident ka deep dive view render karta hai: 7-factor progress bars, 4-tier LLM intelligence panel, event telemetry logs, aur remediation action buttons.&quot;, &quot;why_matters&quot;: &quot;Analyst ko attack investigate aur neutralize karne ki detailed powers deta hai.&quot;, &quot;connections&quot;: &quot;Uses lib/incident.ts -> renders components/incident/* panels.&quot;})' data-search="app/incidents/[id]/page.tsx frontend ui deep incident inspection page with score breakdown, llm reasoning, and actions.">
+                    <div class="tile-head">
+                        <span class="tile-name">app/incidents/[id]/page.tsx</span>
+                        <span class="tile-badge" style="background:#14B8A622; color:#14B8A6; border:1px solid #14B8A644;">Detail Route</span>
+                    </div>
+                    <div class="tile-sub">Deep incident inspection page with score breakdown, LLM reasoning, and actions.</div>
+                </div>
+
+                <div class="tile-card" onclick='openTileModal({&quot;name&quot;: &quot;components/incident/incident-score-breakdown.tsx&quot;, &quot;path&quot;: &quot;frontend/components/incident/incident-score-breakdown.tsx&quot;, &quot;category&quot;: &quot;Frontend UI&quot;, &quot;badge&quot;: &quot;Score Card&quot;, &quot;color&quot;: &quot;#14B8A6&quot;, &quot;one_liner&quot;: &quot;Visual breakdown card for 7 mathematical risk score factors.&quot;, &quot;what_it_does&quot;: &quot;Backend ke 7 score factors ko labeled progress bars aur point badges ke sath render karta hai taake analyst samajh sake ke score 91 kyun aaya.&quot;, &quot;why_matters&quot;: &quot;AI 'black-box' perception ko khatam karke mathematical transparency provide karta hai.&quot;, &quot;connections&quot;: &quot;Receives ScoreFactorsRecord from lib/incident.ts.&quot;})' data-search="components/incident/incident-score-breakdown.tsx frontend ui visual breakdown card for 7 mathematical risk score factors.">
+                    <div class="tile-head">
+                        <span class="tile-name">components/incident/incident-score-breakdown.tsx</span>
+                        <span class="tile-badge" style="background:#14B8A622; color:#14B8A6; border:1px solid #14B8A644;">Score Card</span>
+                    </div>
+                    <div class="tile-sub">Visual breakdown card for 7 mathematical risk score factors.</div>
+                </div>
+
+                <div class="tile-card" onclick='openTileModal({&quot;name&quot;: &quot;components/incident/incident-llm-panel.tsx&quot;, &quot;path&quot;: &quot;frontend/components/incident/incident-llm-panel.tsx&quot;, &quot;category&quot;: &quot;Frontend UI&quot;, &quot;badge&quot;: &quot;AI Panel&quot;, &quot;color&quot;: &quot;#14B8A6&quot;, &quot;one_liner&quot;: &quot;Cyberpunk-themed visual panel presenting the 4-tier AI reasoning tabs.&quot;, &quot;what_it_does&quot;: &quot;Observed Evidence, Retrieved Context, AI Interpretation, aur Recommended Action ko separate collapsible cards mein render karta hai with copy-to-clipboard.&quot;, &quot;why_matters&quot;: &quot;AI insights ko executive aur SOC analyst dono ke liye digestible banata hai.&quot;, &quot;connections&quot;: &quot;Renders LLMExplanation from lib/incident.ts.&quot;})' data-search="components/incident/incident-llm-panel.tsx frontend ui cyberpunk-themed visual panel presenting the 4-tier ai reasoning tabs.">
+                    <div class="tile-head">
+                        <span class="tile-name">components/incident/incident-llm-panel.tsx</span>
+                        <span class="tile-badge" style="background:#14B8A622; color:#14B8A6; border:1px solid #14B8A644;">AI Panel</span>
+                    </div>
+                    <div class="tile-sub">Cyberpunk-themed visual panel presenting the 4-tier AI reasoning tabs.</div>
+                </div>
+
+                <div class="tile-card" onclick='openTileModal({&quot;name&quot;: &quot;components/incident/incident-action-panel.tsx&quot;, &quot;path&quot;: &quot;frontend/components/incident/incident-action-panel.tsx&quot;, &quot;category&quot;: &quot;Frontend UI&quot;, &quot;badge&quot;: &quot;Action Hub&quot;, &quot;color&quot;: &quot;#14B8A6&quot;, &quot;one_liner&quot;: &quot;SOC remediation execution panel (Isolate Host, Block IP, Resolve).&quot;, &quot;what_it_does&quot;: &quot;Analyst ko 1-click remediation buttons provide karta hai, action notes input leta hai, aur POST /api/incidents/{id}/action execute karke status update karta hai.&quot;, &quot;why_matters&quot;: &quot;ThreatIQ ko passive dashboard se active incident response system banata hai.&quot;, &quot;connections&quot;: &quot;Calls submitIncidentAction() from lib/incident.ts -> invalidates SWR cache.&quot;})' data-search="components/incident/incident-action-panel.tsx frontend ui soc remediation execution panel (isolate host, block ip, resolve).">
+                    <div class="tile-head">
+                        <span class="tile-name">components/incident/incident-action-panel.tsx</span>
+                        <span class="tile-badge" style="background:#14B8A622; color:#14B8A6; border:1px solid #14B8A644;">Action Hub</span>
+                    </div>
+                    <div class="tile-sub">SOC remediation execution panel (Isolate Host, Block IP, Resolve).</div>
+                </div>
+
+                <div class="tile-card" onclick='openTileModal({&quot;name&quot;: &quot;lib/api.ts&quot;, &quot;path&quot;: &quot;frontend/lib/api.ts&quot;, &quot;category&quot;: &quot;Frontend Lib&quot;, &quot;badge&quot;: &quot;Axios Client&quot;, &quot;color&quot;: &quot;#6366F1&quot;, &quot;one_liner&quot;: &quot;Axios HTTP client instance with ngrok headers and typed API fetchers.&quot;, &quot;what_it_does&quot;: &quot;Backend API ke sath HTTP communication handle karta hai (10s timeout, ngrok bypass headers, base URL handling) aur typed helper functions export karta hai.&quot;, &quot;why_matters&quot;: &quot;Frontend ka network layer centralize karta hai.&quot;, &quot;connections&quot;: &quot;Used by lib/hooks.ts, lib/incident.ts, lib/setup.ts.&quot;})' data-search="lib/api.ts frontend lib axios http client instance with ngrok headers and typed api fetchers.">
+                    <div class="tile-head">
+                        <span class="tile-name">lib/api.ts</span>
+                        <span class="tile-badge" style="background:#6366F122; color:#6366F1; border:1px solid #6366F144;">Axios Client</span>
+                    </div>
+                    <div class="tile-sub">Axios HTTP client instance with ngrok headers and typed API fetchers.</div>
+                </div>
+
+                <div class="tile-card" onclick='openTileModal({&quot;name&quot;: &quot;lib/hooks.ts&quot;, &quot;path&quot;: &quot;frontend/lib/hooks.ts&quot;, &quot;category&quot;: &quot;Frontend Lib&quot;, &quot;badge&quot;: &quot;SWR Hooks&quot;, &quot;color&quot;: &quot;#6366F1&quot;, &quot;one_liner&quot;: &quot;SWR data hooks for automatic caching and 5000ms background polling.&quot;, &quot;what_it_does&quot;: &quot;useDashboardStats, useIncidents, useIncidentDetail hooks provide karta hai jo in-memory caching aur background revalidation handle karte hain.&quot;, &quot;why_matters&quot;: &quot;Zero UI flicker aur real-time dashboard updates ensure karta hai.&quot;, &quot;connections&quot;: &quot;Calls fetchers from lib/api.ts -> consumed by React components.&quot;})' data-search="lib/hooks.ts frontend lib swr data hooks for automatic caching and 5000ms background polling.">
+                    <div class="tile-head">
+                        <span class="tile-name">lib/hooks.ts</span>
+                        <span class="tile-badge" style="background:#6366F122; color:#6366F1; border:1px solid #6366F144;">SWR Hooks</span>
+                    </div>
+                    <div class="tile-sub">SWR data hooks for automatic caching and 5000ms background polling.</div>
+                </div>
+
+                <div class="tile-card" onclick='openTileModal({&quot;name&quot;: &quot;lib/severity.ts&quot;, &quot;path&quot;: &quot;frontend/lib/severity.ts&quot;, &quot;category&quot;: &quot;Frontend Lib&quot;, &quot;badge&quot;: &quot;Styling Tokens&quot;, &quot;color&quot;: &quot;#6366F1&quot;, &quot;one_liner&quot;: &quot;Risk score mapping (0-100) to severity bands and GoodBoard color tokens.&quot;, &quot;what_it_does&quot;: &quot;Score >=80 ko critical, >=60 ko high, >=40 ko medium, <40 ko low map karta hai aur DESIGN_SYSTEM.md ke mutabiq Obsidian, Electric Lime, aur Cyber Teal classes assign karta hai.&quot;, &quot;why_matters&quot;: &quot;Poori app mein visual consistency enforce karta hai.&quot;, &quot;connections&quot;: &quot;Mirrors backend/api/ingest.py -> used across all UI cards.&quot;})' data-search="lib/severity.ts frontend lib risk score mapping (0-100) to severity bands and goodboard color tokens.">
+                    <div class="tile-head">
+                        <span class="tile-name">lib/severity.ts</span>
+                        <span class="tile-badge" style="background:#6366F122; color:#6366F1; border:1px solid #6366F144;">Styling Tokens</span>
+                    </div>
+                    <div class="tile-sub">Risk score mapping (0-100) to severity bands and GoodBoard color tokens.</div>
+                </div>
+
+                <div class="tile-card" onclick='openTileModal({&quot;name&quot;: &quot;Root Scripts & Reset Tools (Group)&quot;, &quot;path&quot;: &quot;scripts/ & root helpers (13 files)&quot;, &quot;category&quot;: &quot;Scripts & Tooling&quot;, &quot;badge&quot;: &quot;13 Files&quot;, &quot;color&quot;: &quot;#64748B&quot;, &quot;one_liner&quot;: &quot;reset.py, reset_data.bat, seed_db.py, ingest_demo.py, benchmark.py, etc.&quot;, &quot;what_it_does&quot;: &quot;Database ko reset karne, demo scenarios inject karne, latency benchmark test karne, aur SQLite seed karne ke utility automation scripts shamil hain.&quot;, &quot;why_matters&quot;: &quot;Local development, testing, aur hackathon presentation reset ke liye zaroori hain.&quot;, &quot;connections&quot;: &quot;Interacts with backend/threatiq.db, backend/pipeline.py, and REST endpoints.&quot;})' data-search="root scripts & reset tools (group) scripts & tooling reset.py, reset_data.bat, seed_db.py, ingest_demo.py, benchmark.py, etc.">
+                    <div class="tile-head">
+                        <span class="tile-name">Root Scripts & Reset Tools (Group)</span>
+                        <span class="tile-badge" style="background:#64748B22; color:#64748B; border:1px solid #64748B44;">13 Files</span>
+                    </div>
+                    <div class="tile-sub">reset.py, reset_data.bat, seed_db.py, ingest_demo.py, benchmark.py, etc.</div>
+                </div>
+
+                <div class="tile-card" onclick='openTileModal({&quot;name&quot;: &quot;Project Documentation & Specs (Group)&quot;, &quot;path&quot;: &quot;Root docs (6 files)&quot;, &quot;category&quot;: &quot;Documentation&quot;, &quot;badge&quot;: &quot;6 Files&quot;, &quot;color&quot;: &quot;#64748B&quot;, &quot;one_liner&quot;: &quot;README.md, DEMO.md, DESIGN_SYSTEM.md, HACKATHON_REPORT.md, PRESENTATION.md, DEPLOYMENT.md.&quot;, &quot;what_it_does&quot;: &quot;Comprehensive hackathon reports, visual design tokens (GoodBoard Obsidian & Lime), live judge demo talk-tracks, aur architecture documentation files.&quot;, &quot;why_matters&quot;: &quot;Project context, presentation script, aur architecture guidelines provide karte hain.&quot;, &quot;connections&quot;: &quot;Human reference documentation.&quot;})' data-search="project documentation & specs (group) documentation readme.md, demo.md, design_system.md, hackathon_report.md, presentation.md, deployment.md.">
+                    <div class="tile-head">
+                        <span class="tile-name">Project Documentation & Specs (Group)</span>
+                        <span class="tile-badge" style="background:#64748B22; color:#64748B; border:1px solid #64748B44;">6 Files</span>
+                    </div>
+                    <div class="tile-sub">README.md, DEMO.md, DESIGN_SYSTEM.md, HACKATHON_REPORT.md, PRESENTATION.md, DEPLOYMENT.md.</div>
+                </div>
+
+                <div class="tile-card" onclick='openTileModal({&quot;name&quot;: &quot;Threat Intel Data & ChromaDB Files (Group)&quot;, &quot;path&quot;: &quot;backend/data/ & demo_data/ (13 files)&quot;, &quot;category&quot;: &quot;Data & Vectors&quot;, &quot;badge&quot;: &quot;13 Files&quot;, &quot;color&quot;: &quot;#64748B&quot;, &quot;one_liner&quot;: &quot;mitre_attack.json, cve_summaries.json, events.json, chroma.sqlite3, and vector indexes.&quot;, &quot;what_it_does&quot;: &quot;Pre-curated cybersecurity intelligence files (12 MITRE techniques, 11 CVE descriptions), Operation Shadow DB 50-event demo logs, aur local ChromaDB index files.&quot;, &quot;why_matters&quot;: &quot;Offline RAG similarity search aur instant demo loading isi pre-seeded data par chalte hain.&quot;, &quot;connections&quot;: &quot;Loaded by backend/rag/vector_store.py and backend/api/demo.py.&quot;})' data-search="threat intel data & chromadb files (group) data & vectors mitre_attack.json, cve_summaries.json, events.json, chroma.sqlite3, and vector indexes.">
+                    <div class="tile-head">
+                        <span class="tile-name">Threat Intel Data & ChromaDB Files (Group)</span>
+                        <span class="tile-badge" style="background:#64748B22; color:#64748B; border:1px solid #64748B44;">13 Files</span>
+                    </div>
+                    <div class="tile-sub">mitre_attack.json, cve_summaries.json, events.json, chroma.sqlite3, and vector indexes.</div>
+                </div>
+
+                <div class="tile-card" onclick='openTileModal({&quot;name&quot;: &quot;Backend Automated Test Suite (Group)&quot;, &quot;path&quot;: &quot;backend/tests/ (9 files)&quot;, &quot;category&quot;: &quot;Testing&quot;, &quot;badge&quot;: &quot;9 Files&quot;, &quot;color&quot;: &quot;#64748B&quot;, &quot;one_liner&quot;: &quot;test_detection.py, test_correlation.py, test_scoring.py, test_rag.py, test_llm.py, etc.&quot;, &quot;what_it_does&quot;: &quot;Pytest verification test suite jo IsolationForest anomaly detection, Union-Find correlation, 7-factor scoring formula, RAG retrieval, aur LLM fallback ko validate karti hai.&quot;, &quot;why_matters&quot;: &quot;Algorithm correctness aur high code reliability ensure karti hai.&quot;, &quot;connections&quot;: &quot;Tests backend/pipeline/* modules.&quot;})' data-search="backend automated test suite (group) testing test_detection.py, test_correlation.py, test_scoring.py, test_rag.py, test_llm.py, etc.">
+                    <div class="tile-head">
+                        <span class="tile-name">Backend Automated Test Suite (Group)</span>
+                        <span class="tile-badge" style="background:#64748B22; color:#64748B; border:1px solid #64748B44;">9 Files</span>
+                    </div>
+                    <div class="tile-sub">test_detection.py, test_correlation.py, test_scoring.py, test_rag.py, test_llm.py, etc.</div>
+                </div>
+
+                <div class="tile-card" onclick='openTileModal({&quot;name&quot;: &quot;Frontend Styling, Assets & Configs (Group)&quot;, &quot;path&quot;: &quot;frontend/ configs & public/ (30+ files)&quot;, &quot;category&quot;: &quot;Frontend Config&quot;, &quot;badge&quot;: &quot;30+ Files&quot;, &quot;color&quot;: &quot;#64748B&quot;, &quot;one_liner&quot;: &quot;tailwind.config.ts, globals.css, package.json, public/ logos, stat icons, and Next configs.&quot;, &quot;what_it_does&quot;: &quot;Tailwind configuration implementing the GoodBoard Obsidian design system, package manifests, brand PNG logos, executive stat card icons, aur TypeScript configs.&quot;, &quot;why_matters&quot;: &quot;Frontend web app ki visual identity, build system, aur package dependencies define karte hain.&quot;, &quot;connections&quot;: &quot;Configures Next.js 14 and Tailwind build pipeline.&quot;})' data-search="frontend styling, assets & configs (group) frontend config tailwind.config.ts, globals.css, package.json, public/ logos, stat icons, and next configs.">
+                    <div class="tile-head">
+                        <span class="tile-name">Frontend Styling, Assets & Configs (Group)</span>
+                        <span class="tile-badge" style="background:#64748B22; color:#64748B; border:1px solid #64748B44;">30+ Files</span>
+                    </div>
+                    <div class="tile-sub">tailwind.config.ts, globals.css, package.json, public/ logos, stat icons, and Next configs.</div>
+                </div>
+
+            </div>
+        </section>
+    </main>
+
+    <!-- Compact Detail Modal -->
+    <div class="tile-modal-bg" id="tile-modal" onclick="closeTileModalOnOverlay(event)">
+        <div class="tile-modal" onclick="event.stopPropagation()">
+            <div class="modal-top">
+                <span class="modal-title" id="m-name">filename.py</span>
+                <button class="modal-close" onclick="closeTileModal()">✕</button>
+            </div>
+            <div class="modal-sec">
+                <strong>Path & Category</strong>
+                <p id="m-path" class="mono" style="font-size:0.8rem; color:var(--text-muted);"></p>
+            </div>
+            <div class="modal-sec">
+                <strong>Yeh file kya karti hai (Roman Urdu)</strong>
+                <p id="m-does"></p>
+            </div>
+            <div class="modal-sec">
+                <strong>Yeh kyun zaroori hai (Impact if missing)</strong>
+                <p id="m-why"></p>
+            </div>
+            <div class="modal-sec">
+                <strong>Connections & Data Links</strong>
+                <p id="m-conn" class="mono" style="font-size:0.8rem;"></p>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        ThreatIQ Hackathon Explainer Lite • 100% Offline • Zero Dependencies • Fast Skimmable Map
+    </footer>
+
+    <!-- Interactive Logic (Tab switching, Theme, Search, Modal) -->
+    <script>
+        function showTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(b => {
+                b.classList.toggle('active', b.getAttribute('onclick').includes(tabId));
+            });
+            document.querySelectorAll('.page-panel').forEach(p => {
+                p.classList.toggle('active', p.id === `tab-${tabId}`);
+            });
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function toggleTheme() {
+            document.documentElement.classList.toggle('light');
+            document.documentElement.classList.toggle('dark');
+        }
+
+        function filterQA(cat, el) {
+            document.querySelectorAll('#qa-filter-chips .qa-chip').forEach(c => c.classList.remove('active'));
+            el.classList.add('active');
+            document.querySelectorAll('.qa-card').forEach(card => {
+                if (cat === 'ALL' || card.getAttribute('data-cat') === cat) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        function filterTiles() {
+            const q = (document.getElementById('tile-search').value || '').toLowerCase().trim();
+            document.querySelectorAll('.tile-card').forEach(card => {
+                const searchData = card.getAttribute('data-search') || '';
+                card.style.display = (!q || searchData.includes(q)) ? 'flex' : 'none';
+            });
+        }
+
+        function openTileModal(tile) {
+            document.getElementById('m-name').textContent = tile.name;
+            document.getElementById('m-path').textContent = `${tile.path} (${tile.category})`;
+            document.getElementById('m-does').textContent = tile.what_it_does;
+            document.getElementById('m-why').textContent = tile.why_matters;
+            document.getElementById('m-conn').textContent = tile.connections;
+            document.getElementById('tile-modal').classList.add('active');
+        }
+
+        function closeTileModal() {
+            document.getElementById('tile-modal').classList.remove('active');
+        }
+
+        function closeTileModalOnOverlay(e) {
+            if (e.target.id === 'tile-modal') {
+                closeTileModal();
+            }
+        }
+    </script>
+</body>
+</html>
