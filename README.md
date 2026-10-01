@@ -361,6 +361,12 @@ The correlation engine automatically clusters these individual events into a uni
 
 This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for details.
 
+## 👥 Contributors
+
+Built collaboratively by [@msaad-gh](https://github.com/msaad-gh) and [@talaaltariq](https://github.com/talaaltariq).
+
 <div align="center">
+
 Built with precision for security teams protecting mission-critical infrastructure.
+
 </div>
