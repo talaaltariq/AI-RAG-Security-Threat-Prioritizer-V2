@@ -88,18 +88,24 @@ class _ReportPDF(FPDF):
 def build_incident_report_pdf(
     incidents_data: List[Dict[str, Any]],
     alert_reduction_pct: Optional[float] = None,
+    ai_summary: Optional[Dict[str, Any]] = None,
 ) -> bytes:
     """Build the analyst incident report PDF and return it as raw bytes.
 
     ``incidents_data`` is a list of full incident dicts (the shape returned
     by GET /api/incidents/{id}). ``alert_reduction_pct`` is the correlation
     alert-reduction metric from GET /api/stats, if available.
+    ``ai_summary`` is an optional dict containing the report-level AI executive
+    summary (keys: overall_security_picture, key_findings, recommended_actions,
+    confidence, confidence_reason).
     """
     pdf = _ReportPDF()
     pdf.set_auto_page_break(auto=True, margin=18)
     pdf.add_page()
 
-    _executive_summary_section(pdf, incidents_data, alert_reduction_pct)
+    _executive_summary_section(
+        pdf, incidents_data, alert_reduction_pct, ai_summary=ai_summary
+    )
     _priority_queue_section(pdf, incidents_data)
     _critical_briefings_section(pdf, incidents_data)
 
@@ -115,6 +121,7 @@ def _executive_summary_section(
     pdf: FPDF,
     incidents_data: List[Dict[str, Any]],
     alert_reduction_pct: Optional[float],
+    ai_summary: Optional[Dict[str, Any]] = None,
 ) -> None:
     pdf.set_font("helvetica", "B", 20)
     pdf.cell(0, 12, "ThreatIQ Incident Report", new_x="LMARGIN", new_y="NEXT")
@@ -128,13 +135,98 @@ def _executive_summary_section(
         new_y="NEXT",
     )
     pdf.set_text_color(0, 0, 0)
-    pdf.ln(4)
+    pdf.ln(3)
+
+    _ai_summary_block(pdf, ai_summary)
+    pdf.ln(2)
 
     _kpi_block(pdf, incidents_data, alert_reduction_pct)
     pdf.ln(2)
     _top_assets_table(pdf, incidents_data)
     pdf.ln(2)
     _techniques_table(pdf, incidents_data)
+
+
+def _ai_summary_block(pdf: FPDF, ai_summary: Optional[Dict[str, Any]]) -> None:
+    """Render the AI Executive Summary block at the top of the report."""
+    pdf.set_font("helvetica", "B", 13)
+    pdf.cell(0, 8, "AI Executive Summary", new_x="LMARGIN", new_y="NEXT")
+
+    if not ai_summary or not ai_summary.get("overall_security_picture"):
+        pdf.set_font("helvetica", "I", 10)
+        pdf.multi_cell(
+            0,
+            5,
+            _safe_text(
+                "AI summary unavailable for this export. "
+                "The report below still contains the current stored analysis."
+            ),
+            wrapmode="CHAR",
+            new_x="LMARGIN",
+            new_y="NEXT",
+        )
+        pdf.ln(2)
+        return
+
+    # Overall Security Picture
+    pdf.set_font("helvetica", "B", 10)
+    pdf.cell(0, 6, "Overall Security Picture", new_x="LMARGIN", new_y="NEXT")
+    pdf.set_font("helvetica", size=10)
+    picture = _safe_text(
+        str(ai_summary.get("overall_security_picture") or "").strip()[:800]
+    )
+    pdf.multi_cell(0, 5, picture, wrapmode="CHAR", new_x="LMARGIN", new_y="NEXT")
+    pdf.ln(2)
+
+    # Key Findings
+    pdf.set_font("helvetica", "B", 10)
+    pdf.cell(0, 6, "Key Findings", new_x="LMARGIN", new_y="NEXT")
+    findings = ai_summary.get("key_findings") or []
+    pdf.set_font("helvetica", size=10)
+    if findings:
+        for finding in findings[:3]:
+            line = f"* {_safe_text(str(finding).strip()[:300])}"
+            pdf.multi_cell(
+                0, 5, line, wrapmode="CHAR", new_x="LMARGIN", new_y="NEXT"
+            )
+    else:
+        pdf.multi_cell(
+            0, 5, "* None reported.", wrapmode="CHAR", new_x="LMARGIN", new_y="NEXT"
+        )
+    pdf.ln(2)
+
+    # Recommended Actions
+    pdf.set_font("helvetica", "B", 10)
+    pdf.cell(0, 6, "Recommended Actions", new_x="LMARGIN", new_y="NEXT")
+    actions = ai_summary.get("recommended_actions") or []
+    pdf.set_font("helvetica", size=10)
+    if actions:
+        for action in actions[:3]:
+            line = f"* {_safe_text(str(action).strip()[:300])}"
+            pdf.multi_cell(
+                0, 5, line, wrapmode="CHAR", new_x="LMARGIN", new_y="NEXT"
+            )
+    else:
+        pdf.multi_cell(
+            0, 5, "* None reported.", wrapmode="CHAR", new_x="LMARGIN", new_y="NEXT"
+        )
+    pdf.ln(2)
+
+    # Confidence: HIGH / MEDIUM / LOW + Confidence Reason
+    conf = _safe_text(str(ai_summary.get("confidence") or "medium")).strip().upper()
+    conf_reason = _safe_text(
+        str(ai_summary.get("confidence_reason") or "").strip()[:300]
+    )
+    pdf.set_font("helvetica", "B", 10)
+    pdf.cell(0, 6, f"Confidence: {conf}", new_x="LMARGIN", new_y="NEXT")
+    if conf_reason:
+        pdf.set_font("helvetica", size=9)
+        pdf.set_text_color(90, 90, 90)
+        pdf.multi_cell(
+            0, 5, conf_reason, wrapmode="CHAR", new_x="LMARGIN", new_y="NEXT"
+        )
+        pdf.set_text_color(0, 0, 0)
+    pdf.ln(2)
 
 
 def _kpi_block(
